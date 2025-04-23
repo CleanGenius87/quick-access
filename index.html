@@ -268,6 +268,7 @@
 
   // ---- DUTY ROSTER LOGIC ---
   const dutyKey = "dutyRoster-entries-v1";
+  const GOOGLE_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxKzAvsbr9VU-i9kpey5AKF41RxTbfzLMWT3WQCrQPlXf8Bs7ShiUHN5oPn3gAdBb69/exec";
 
   function pad(n){return n<10?'0'+n:n;}
   function getDateYYYYMMDD(date){
@@ -392,12 +393,13 @@
         <button type="submit">Save All Duties</button>
         <button type="button" id="cancelBulk" style="margin-left:12px;background:#bbb;color:#2c0078;">Cancel</button>
       </div>
+      <div id="submitStatus" style="margin:7px 0 0 0;font-size:0.98em;"></div>
     </form>
     `;
     area.innerHTML = html;
 
     document.getElementById('cancelBulk').onclick = () => { area.innerHTML = ''; };
-    document.getElementById('bulkDutyForm').onsubmit = function(e){
+    document.getElementById('bulkDutyForm').onsubmit = async function(e){
       e.preventDefault();
       let name = document.getElementById('bulk-name').value.trim();
       if(!name){
@@ -416,6 +418,7 @@
         alert("No duties entered. Please fill at least one!");
         return false;
       }
+      // Store locally for viewing
       let entries = loadEntries();
       newEntries.forEach(n=>{
         let found = entries.find(e=>e.name.toLowerCase()===n.name.toLowerCase() && e.date===n.date);
@@ -431,12 +434,34 @@
       if(currView && newEntries.some(en=>en.date===currView)){
         showEntriesForDate(currView);
       }
-      alert("Duties saved for next 2 weeks!");
-      area.innerHTML = '';
+
+      // --- SEND TO GOOGLE SHEETS ---
+      let submitStatus = document.getElementById('submitStatus');
+      submitStatus.textContent = "Submitting to rota sheet…";
+      submitStatus.style.color = "#836cf4";
+      try {
+        // Send as an array!
+        let response = await fetch(GOOGLE_SHEETS_ENDPOINT, {
+          method: "POST",
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(newEntries)
+        });
+        let text = await response.text();
+        if(response.ok && (text.toLowerCase().includes("success")||text.toLowerCase().includes("ok"))){
+          submitStatus.textContent = "✅ Rota duties saved to rota sheet!";
+          submitStatus.style.color = "#44b261";
+          setTimeout(()=>{ area.innerHTML = ''; }, 1200);
+        } else {
+          submitStatus.textContent = "⚠️ Could not save to rota sheet: "+text;
+          submitStatus.style.color = "#d70a33";
+        }
+      } catch(err) {
+        submitStatus.textContent = "❌ Network error saving to rota sheet.";
+        submitStatus.style.color = "#d70a33";
+      }
       return false;
     }
   }
-
 </script>
 </body>
 </html>
