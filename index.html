@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>First Bus Quick Access & Duty Roster</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
   <style>
     body {
@@ -13,164 +11,47 @@
       color: #fff;
       margin: 0;
       min-height: 100vh;
-      box-sizing: border-box;
     }
     .container {
-      background: #fff;
-      color: #2c0078;
-      max-width: 520px;
-      margin: 64px auto 0 auto;
-      padding: 36px 36px 32px 36px;
-      border-radius: 18px;
-      box-shadow: 0 8px 40px rgba(44,0,120,0.11);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      background: #fff; color: #2c0078; max-width: 520px;
+      margin: 64px auto 0 auto; padding: 36px 36px 32px 36px; border-radius: 18px;
+      box-shadow: 0 8px 40px rgba(44,0,120,0.11); display: flex; flex-direction: column; align-items: center;
     }
-    .logo {
-      width: 180px;
-      margin-bottom: 35px;
-      display: block;
+    .logo { width: 180px; margin-bottom: 35px; display: block; }
+    .tabs { display: flex; justify-content: center; width: 100%; margin-bottom: 30px; }
+    .tab { flex: 1; padding: 13px 0; text-align: center;
+      background: #ede7fd; color: #2c0078; font-weight: 600; font-size: 1.04rem;
+      cursor: pointer; margin: 0 3px; border-radius: 7px 7px 0 0;
+      border-bottom: 3px solid transparent; transition: all 0.12s; outline: none;
     }
-    .tabs {
-      display: flex;
-      justify-content: center;
-      width: 100%;
-      margin-bottom: 30px;
-    }
-    .tab {
-      flex: 1;
-      padding: 13px 0;
-      text-align: center;
-      background: #ede7fd;
-      color: #2c0078;
-      font-weight: 600;
-      font-size: 1.04rem;
-      cursor: pointer;
-      margin: 0 3px;
-      border-radius: 7px 7px 0 0;
-      border-bottom: 3px solid transparent;
-      transition: all 0.12s;
-      outline: none;
-    }
-    .tab.active {
-      background: #fff;
-      color: #ff44d0;
-      border-bottom: 3px solid #ff44d0;
-    }
-    .tab-content {
-      display: none;
-      width: 100%;
-    }
+    .tab.active { background: #fff; color: #ff44d0; border-bottom: 3px solid #ff44d0; }
+    .tab-content { display: none; width: 100%; }
     .tab-content.active { display: block; }
-
-    .dropdown-section,
-    .duty-form-section {
-      width: 100%;
-      margin-bottom: 24px;
-    }
-    label {
-      font-weight: bold;
-      margin-bottom: 8px;
-      display: block;
-      font-size: 1.05rem;
-      color: #2c0078;
-    }
+    .dropdown-section, .duty-form-section { width: 100%; margin-bottom: 24px; }
+    label { font-weight: bold; margin-bottom: 8px; display: block; font-size: 1.05rem; color: #2c0078;}
     select, input[type="text"], input[type="date"] {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 7px;
-      border: 1.5px solid #2c0078;
-      font-size: 1rem;
-      margin-bottom: 6px;
-      background: #faf7ff;
-      color: #2c0078;
+      width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
+      margin-bottom: 6px; background: #faf7ff; color: #2c0078;
     }
-    .actions {
-      margin-top: 14px;
-      width: 100%;
-      display: flex;
-      justify-content: flex-end;
-    }
-    button {
-      border: none;
-      border-radius: 6px;
-      padding: 9px 22px;
-      background: #ff44d0;
-      color: #fff;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.16s;
-      min-width: 120px;
+    .actions { margin-top: 14px; width: 100%; display: flex; justify-content: flex-end; }
+    button { border: none; border-radius: 6px; padding: 9px 22px; background: #ff44d0; color: #fff;
+      font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.16s; min-width: 120px;
       box-shadow: 0 2px 10px rgba(44,0,120,0.04);
     }
-    button:disabled {
-      background: #c7b2f7;
-      cursor: not-allowed;
-    }
-    .duty-list {
-      margin-top: 20px;
-      margin-bottom: 8px;
-      padding-left: 0px;
-      list-style:none;
-    }
-    .duty-list li {
-      background: #ede7fd;
-      border-radius: 6px;
-      padding: 9px 14px 7px 14px;
-      margin-bottom: 9px;
-      font-size: 1rem;
-      font-weight: 500;
-      color: #36297d;
-    }
-    .duty-bulk-form {
-      margin-top: 16px;
-      background: #faf7ff;
-      border-radius: 7px;
-      padding: 16px 10px 7px 10px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 6px rgba(44,0,120,0.04);
-      font-size: 0.98rem;
-      color:#222;
-    }
-    .duty-bulk-form table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 8px;
-    }
-    .duty-bulk-form th, .duty-bulk-form td {
-      border-bottom: 1px solid #e2e2ee;
-      padding: 6px 4px;
-      text-align: left;
-      font-size: 0.99rem;
-    }
-    .duty-bulk-form select {
-      width: 96%;
-      padding: 7px 9px;
-      margin: 0;
-      border-radius: 5px;
-      border: 1.1px solid #bbb;
-      font-size: 0.99rem;
-      background: #fff;
-      color: #251459;
-    }
-    .footer {
-      color: #faf7ff99;
-      text-align: center;
-      font-size: 0.93rem;
-      margin-top: 48px;
-    }
+    button:disabled { background: #c7b2f7; cursor: not-allowed;}
+    .duty-list { margin-top: 20px; margin-bottom: 8px; padding-left: 0px; list-style:none;}
+    .duty-list li { background: #ede7fd; border-radius: 6px; padding: 9px 14px 7px 14px; margin-bottom: 9px;
+      font-size: 1rem; font-weight: 500; color: #36297d;}
+    .duty-bulk-form { margin-top: 16px; background: #faf7ff; border-radius: 7px; padding: 16px 10px 7px 10px; margin-bottom: 16px;
+      box-shadow: 0 2px 6px rgba(44,0,120,0.04); font-size: 0.98rem; color:#222;}
+    .duty-bulk-form table { width: 100%; border-collapse: collapse; margin-top: 8px;}
+    .duty-bulk-form th, .duty-bulk-form td { border-bottom: 1px solid #e2e2ee; padding: 6px 4px; text-align: left; font-size: 0.99rem;}
+    .duty-bulk-form select { width: 96%; padding: 7px 9px; margin: 0; border-radius: 5px; border: 1.1px solid #bbb; font-size: 0.99rem; background: #fff; color: #251459;}
+    .footer { color: #faf7ff99; text-align: center; font-size: 0.93rem; margin-top: 48px;}
     .duty-bulk-form label[for="bulk-name"] {margin-bottom: 11px;}
     @media (max-width: 600px) {
-      .container {
-        padding: 12px 2vw;
-        max-width: 100vw;
-      }
-      .logo {
-        width: 48vw;
-        max-width: 225px;
-      }
+      .container {padding: 12px 2vw; max-width: 100vw;}
+      .logo {width: 48vw; max-width: 225px;}
       .duty-bulk-form select {width: 99%;}
     }
   </style>
@@ -182,7 +63,6 @@
       <div class="tab active" data-tab="access">Quick Access</div>
       <div class="tab" data-tab="roster">Duty Roster</div>
     </div>
-
     <!-- Tab 1: Quick Access -->
     <div class="tab-content active" id="tab-access">
       <div class="dropdown-section">
@@ -216,13 +96,12 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Tab 2: Duty Roster -->
     <div class="tab-content" id="tab-roster">
       <div class="actions" style="margin-top:0;margin-bottom:17px;">
         <button id="showBulkDuty">Add My Duties (Next 2 Weeks)</button>
       </div>
-      <!-- Bulk entry form will be injected here -->
       <div id="bulkDutyFormArea"></div>
       <div style="margin-top:9px;">
         <label for="view-date">See Who’s Working (choose a date):</label>
@@ -230,238 +109,228 @@
         <ul class="duty-list" id="dutyList"></ul>
       </div>
     </div>
+    <div class="footer">
+      &copy; First Bus &ndash; Quick Access Portal
+    </div>
   </div>
-  <div class="footer">
-    &copy; First Bus &ndash; Quick Access Portal
-  </div>
-<script>
-  // ----- TAB LOGIC -----
-  const tabs = document.querySelectorAll('.tab');
-  const tabContents = document.querySelectorAll('.tab-content');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      tabContents.forEach(tc => tc.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+  <script>
+    // ---------------- Tab UI Logic ----------------
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+      });
     });
-  });
 
-  // ---- QUICK ACCESS LOGIC ----
-  const siteDd = document.getElementById('websiteDropdown');
-  const openWebsiteBtn = document.getElementById('openWebsite');
-  siteDd.addEventListener('change', () => {
-    openWebsiteBtn.disabled = !siteDd.value;
-  });
-  openWebsiteBtn.addEventListener('click', () => {
-    if (siteDd.value) window.open(siteDd.value, '_blank');
-  });
+    // ------------ Quick Access Logic -------------
+    const siteDd = document.getElementById('websiteDropdown');
+    const openWebsiteBtn = document.getElementById('openWebsite');
+    siteDd.addEventListener('change', () => {
+      openWebsiteBtn.disabled = !siteDd.value;
+    });
+    openWebsiteBtn.addEventListener('click', () => {
+      if (siteDd.value) window.open(siteDd.value, '_blank');
+    });
 
-  const fileDd = document.getElementById('fileDropdown');
-  const openFileBtn = document.getElementById('openFile');
-  fileDd.addEventListener('change', () => {
-    openFileBtn.disabled = !fileDd.value;
-  });
-  openFileBtn.addEventListener('click', () => {
-    if (fileDd.value) window.open(fileDd.value, '_blank');
-  });
+    const fileDd = document.getElementById('fileDropdown');
+    const openFileBtn = document.getElementById('openFile');
+    fileDd.addEventListener('change', () => {
+      openFileBtn.disabled = !fileDd.value;
+    });
+    openFileBtn.addEventListener('click', () => {
+      if (fileDd.value) window.open(fileDd.value, '_blank');
+    });
 
-  // ---- DUTY ROSTER LOGIC ---
-  const dutyKey = "dutyRoster-entries-v1";
-  const GOOGLE_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxKzAvsbr9VU-i9kpey5AKF41RxTbfzLMWT3WQCrQPlXf8Bs7ShiUHN5oPn3gAdBb69/exec";
+    // --------- Duty Roster Logic -----------
+    const GOOGLE_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwMWD0meJOnw9FfrM9HeShT-eYwPhpT_HplUOdj6B4WevRK1g9dlKxTwo5POEX1VC7Q/exec";
 
-  function pad(n){return n<10?'0'+n:n;}
-  function getDateYYYYMMDD(date){
-    return date.getFullYear()+'-'+pad(date.getMonth()+1)+'-'+pad(date.getDate());
-  }
-  function dateToDisplay(date) {
-    // Returns: Sat 8 Jun
-    const d = new Date(date);
-    return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
-  }
-
-  // Find next Saturday on or after today
-  function getNextSaturday(){
-    let d = new Date();
-    let day = d.getDay(); // 0=Sun ... 6=Sat
-    let diff = (6 - day);
-    let nextSat = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
-    return nextSat;
-  }
-
-  function setDateLimits(){
-    let today = new Date();
-    let nextSat = getNextSaturday();
-    let minStr = getDateYYYYMMDD(today);
-    let maxDay = new Date(nextSat.getFullYear(), nextSat.getMonth(), nextSat.getDate()+13);
-    let maxStr = getDateYYYYMMDD(maxDay);
-
-    document.getElementById('view-date').setAttribute('min', minStr);
-    document.getElementById('view-date').setAttribute('max', maxStr);
-
-    let defaultDate = today > nextSat ? today : nextSat;
-    document.getElementById('view-date').value = getDateYYYYMMDD(defaultDate);
-  }
-  setDateLimits();
-
-  function loadEntries() {
-    let list = [];
-    try{
-      list = JSON.parse(localStorage.getItem(dutyKey))||[];
-    }catch{ }
-    return list;
-  }
-  function saveEntries(entries){
-    localStorage.setItem(dutyKey, JSON.stringify(entries));
-  }
-  function showEntriesForDate(dateStr){
-    let entries = loadEntries();
-    let list = document.getElementById('dutyList');
-    list.innerHTML = '';
-    entries = entries.filter(e => e.date === dateStr);
-    if(entries.length === 0){
-      list.innerHTML = '<li>No duties recorded for this date.</li>';
-    } else {
-      entries = entries.sort((a,b)=>a.name.localeCompare(b.name));
-      entries.forEach(e=>{
-        let li = document.createElement('li');
-        li.textContent = `${e.name}: ${e.duty}`;
-        list.appendChild(li);
-      });
+    function pad(n){return n<10?'0'+n:n;}
+    function getDateYYYYMMDD(date){
+      return date.getFullYear()+'-'+pad(date.getMonth()+1)+'-'+pad(date.getDate());
     }
-  }
-  document.getElementById('view-date').addEventListener('change', function(){
-    showEntriesForDate(this.value);
-  });
-  showEntriesForDate(document.getElementById('view-date').value);
-
-  // ---- Duty Dropdown Helper ----
-  function getDutyOptionsHtml(selectedValue) {
-    const duties = [];
-    for(let i=1;i<=11;i++) {
-      duties.push(`FW${i}E`);
-      duties.push(`FW${i}L`);
+    function dateToDisplay(date) {
+      const d = new Date(date);
+      return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
     }
-    // Add RD (Rest Day) and AH (Annual Leave/Holidays)
-    duties.push('RD');
-    duties.push('AH');
-    let html = '<option value="">(none)</option>';
-    for(const duty of duties){
-      html += `<option value="${duty}" ${(selectedValue===duty)?"selected":""}>${duty}</option>`;
+    function getNextSaturday(){
+      let d = new Date();
+      let day = d.getDay();
+      let diff = (6 - day);
+      let nextSat = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
+      return nextSat;
     }
-    return html;
-  }
+    function setDateLimits(){
+      let today = new Date();
+      let nextSat = getNextSaturday();
+      let minStr = getDateYYYYMMDD(today);
+      let maxDay = new Date(nextSat.getFullYear(), nextSat.getMonth(), nextSat.getDate()+13);
+      let maxStr = getDateYYYYMMDD(maxDay);
 
-  // --- BULK FORM LOGIC ---
+      document.getElementById('view-date').setAttribute('min', minStr);
+      document.getElementById('view-date').setAttribute('max', maxStr);
 
-  document.getElementById('showBulkDuty').addEventListener('click', function(){
-    showBulkForm();
-  });
-
-  function showBulkForm() {
-    // Calculate the starting Saturday
-    const startSat = getNextSaturday();
-    let days = [];
-    for(let i=0;i<14;i++){
-      let d = new Date(startSat.getFullYear(),startSat.getMonth(),startSat.getDate()+i);
-      days.push({
-        date: getDateYYYYMMDD(d),
-        display: dateToDisplay(d)
-      });
+      let defaultDate = today > nextSat ? today : nextSat;
+      document.getElementById('view-date').value = getDateYYYYMMDD(defaultDate);
     }
-    let area = document.getElementById('bulkDutyFormArea');
-    let html = `
-    <form id="bulkDutyForm" class="duty-bulk-form">
-      <label for="bulk-name">Your Name</label>
-      <input type="text" id="bulk-name" maxlength="36" autocomplete="off" placeholder="e.g. Chris B" required>
-      <table>
-        <thead><tr><th>Date</th><th>Duty</th></tr></thead>
-        <tbody>
-        ${days.map((d,i)=>`
-          <tr>
-            <td><b>${d.display}</b><br><small>${d.date}</small></td>
-            <td>
-              <select id="bulk-duty-${i}">
-                ${getDutyOptionsHtml("")}
-              </select>
-            </td>
-          </tr>
-        `).join('')}
-        </tbody>
-      </table>
-      <div class="actions" style="margin-top:17px;">
-        <button type="submit">Save All Duties</button>
-        <button type="button" id="cancelBulk" style="margin-left:12px;background:#bbb;color:#2c0078;">Cancel</button>
-      </div>
-      <div id="submitStatus" style="margin:7px 0 0 0;font-size:0.98em;"></div>
-    </form>
-    `;
-    area.innerHTML = html;
+    setDateLimits();
 
-    document.getElementById('cancelBulk').onclick = () => { area.innerHTML = ''; };
-    document.getElementById('bulkDutyForm').onsubmit = async function(e){
-      e.preventDefault();
-      let name = document.getElementById('bulk-name').value.trim();
-      if(!name){
-        alert('Please enter your name.');
-        return false;
+    // ---- Duty Dropdown Helper ----
+    function getDutyOptionsHtml(selectedValue) {
+      const duties = [];
+      for(let i=1;i<=11;i++) {
+        duties.push(`FW${i}E`);
+        duties.push(`FW${i}L`);
       }
-      let newEntries = [];
-      for(let i=0;i<14;i++){
-        let dutySel = document.getElementById('bulk-duty-'+i);
-        let duty = dutySel.value;
-        if(duty){
-          newEntries.push({name, date: days[i].date, duty});
-        }
+      duties.push('RD');
+      duties.push('AH');
+      let html = '<option value="">(none)</option>';
+      for(const duty of duties){
+        html += `<option value="${duty}" ${(selectedValue===duty)?"selected":""}>${duty}</option>`;
       }
-      if(newEntries.length == 0){
-        alert("No duties entered. Please fill at least one!");
-        return false;
-      }
-      // Store locally for viewing
-      let entries = loadEntries();
-      newEntries.forEach(n=>{
-        let found = entries.find(e=>e.name.toLowerCase()===n.name.toLowerCase() && e.date===n.date);
-        if(found){
-          found.duty=n.duty;
-        }else{
-          entries.push(n);
-        }
-      });
-      saveEntries(entries);
+      return html;
+    }
 
-      let currView = document.getElementById('view-date').value;
-      if(currView && newEntries.some(en=>en.date===currView)){
-        showEntriesForDate(currView);
-      }
-
-      // --- SEND TO GOOGLE SHEETS ---
-      let submitStatus = document.getElementById('submitStatus');
-      submitStatus.textContent = "Submitting to rota sheet…";
-      submitStatus.style.color = "#836cf4";
+    // ------------ LOAD/SAVE FUNCTIONS USING SHEETS -----------------
+    async function loadEntries(dateStr) {
       try {
-        // Send as an array!
-        let response = await fetch(GOOGLE_SHEETS_ENDPOINT, {
-          method: "POST",
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify(newEntries)
+        const url = `${GOOGLE_SHEETS_ENDPOINT}?date=${encodeURIComponent(dateStr)}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok.');
+        return await response.json();
+      } catch (error) {
+        console.error('Error loading entries:', error);
+        return [];
+      }
+    }
+
+    async function saveEntries(entries) {
+      try {
+        const response = await fetch(GOOGLE_SHEETS_ENDPOINT, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(entries)
         });
-        let text = await response.text();
-        if(response.ok && (text.toLowerCase().includes("success")||text.toLowerCase().includes("ok"))){
+        if (!response.ok) throw new Error('Network response was not ok.');
+        const result = await response.json();
+        if (result.status !== 'success') throw new Error('Failed to save entries.');
+        return true;
+      } catch (error) {
+        console.error('Error saving entries:', error);
+        return false;
+      }
+    }
+
+    // ---- Show entries for date (Calls loadEntries) ----
+    async function showEntriesForDate(dateStr) {
+      const list = document.getElementById('dutyList');
+      list.innerHTML = '';
+      const entries = await loadEntries(dateStr);
+      if (entries.length === 0) {
+        list.innerHTML = '<li>No duties recorded for this date.</li>';
+      } else {
+        entries.sort((a, b) => a.name.localeCompare(b.name));
+        entries.forEach(e => {
+          const li = document.createElement('li');
+          li.textContent = `${e.name}: ${e.duty}`;
+          list.appendChild(li);
+        });
+      }
+    }
+
+    document.getElementById('view-date').addEventListener('change', function(){
+      showEntriesForDate(this.value);
+    });
+    showEntriesForDate(document.getElementById('view-date').value);
+
+    // ---- Bulk Form Logic ----
+    document.getElementById('showBulkDuty').addEventListener('click', function(){
+      showBulkForm();
+    });
+
+    function showBulkForm() {
+      const startSat = getNextSaturday();
+      let days = [];
+      for(let i=0;i<14;i++){
+        let d = new Date(startSat.getFullYear(),startSat.getMonth(),startSat.getDate()+i);
+        days.push({
+          date: getDateYYYYMMDD(d),
+          display: dateToDisplay(d)
+        });
+      }
+      let area = document.getElementById('bulkDutyFormArea');
+      let html = `
+      <form id="bulkDutyForm" class="duty-bulk-form">
+        <label for="bulk-name">Your Name</label>
+        <input type="text" id="bulk-name" maxlength="36" autocomplete="off" placeholder="e.g. Chris B" required>
+        <table>
+          <thead><tr><th>Date</th><th>Duty</th></tr></thead>
+          <tbody>
+          ${days.map((d,i)=>`
+            <tr>
+              <td><b>${d.display}</b><br><small>${d.date}</small></td>
+              <td>
+                <select id="bulk-duty-${i}">
+                  ${getDutyOptionsHtml("")}
+                </select>
+              </td>
+            </tr>
+          `).join('')}
+          </tbody>
+        </table>
+        <div class="actions" style="margin-top:17px;">
+          <button type="submit">Save All Duties</button>
+          <button type="button" id="cancelBulk" style="margin-left:12px;background:#bbb;color:#2c0078;">Cancel</button>
+        </div>
+        <div id="submitStatus" style="margin:7px 0 0 0;font-size:0.98em;"></div>
+      </form>
+      `;
+      area.innerHTML = html;
+
+      document.getElementById('cancelBulk').onclick = () => { area.innerHTML = ''; };
+
+      document.getElementById('bulkDutyForm').onsubmit = async function(e){
+        e.preventDefault();
+        let name = document.getElementById('bulk-name').value.trim();
+        if(!name){
+          alert('Please enter your name.');
+          return false;
+        }
+        let newEntries = [];
+        for(let i=0;i<14;i++){
+          let dutySel = document.getElementById('bulk-duty-'+i);
+          let duty = dutySel.value;
+          if(duty){
+            newEntries.push({name, date: days[i].date, duty});
+          }
+        }
+        if(newEntries.length == 0){
+          alert("No duties entered. Please fill at least one!");
+          return false;
+        }
+
+        let submitStatus = document.getElementById('submitStatus');
+        submitStatus.textContent = "Submitting to rota sheet…";
+        submitStatus.style.color = "#836cf4";
+        let saved = await saveEntries(newEntries);
+        if(saved){
           submitStatus.textContent = "✅ Rota duties saved to rota sheet!";
           submitStatus.style.color = "#44b261";
           setTimeout(()=>{ area.innerHTML = ''; }, 1200);
         } else {
-          submitStatus.textContent = "⚠️ Could not save to rota sheet: "+text;
+          submitStatus.textContent = "❌ Error saving to rota sheet.";
           submitStatus.style.color = "#d70a33";
         }
-      } catch(err) {
-        submitStatus.textContent = "❌ Network error saving to rota sheet.";
-        submitStatus.style.color = "#d70a33";
+        let currView = document.getElementById('view-date').value;
+        if(currView && newEntries.some(en=>en.date===currView)){
+          showEntriesForDate(currView);
+        }
+        return false;
       }
-      return false;
     }
-  }
-</script>
+  </script>
 </body>
 </html>
