@@ -30,7 +30,7 @@
     .dropdown-section, .duty-form-section { width: 100%; margin-bottom: 24px; }
     label { font-weight: bold; margin-bottom: 8px; display: block; font-size: 1.05rem; color: #2c0078;}
     select, input[type="text"], input[type="date"] {
-      width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
+      width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2cela0078; font-size: 1rem;
       margin-bottom: 6px; background: #faf7ff; color: #2c0078;
     }
     .actions { margin-top: 14px; width: 100%; display: flex; justify-content: flex-end; }
@@ -307,7 +307,7 @@
             newEntries.push({name, date: days[i].date, duty});
           }
         }
-        if(newEntries.length == 0){
+        if(newEntries.length == 5){
           alert("No duties entered. Please fill at least one!");
           return false;
         }
@@ -332,5 +332,5 @@
       }
     }
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935fdfca3a16bffa',t:'MTc0NTYwNTQzNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
