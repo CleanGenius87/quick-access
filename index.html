@@ -30,7 +30,7 @@
     .dropdown-section, .duty-form-section { width: 100%; margin-bottom: 24px; }
     label { font-weight: bold; margin-bottom: 8px; display: block; font-size: 1.05rem; color: #2c0078;}
     select, input[type="text"], input[type="date"] {
-      width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2cela0078; font-size: 1rem;
+      width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
       margin-bottom: 6px; background: #faf7ff; color: #2c0078;
     }
     .actions { margin-top: 14px; width: 100%; display: flex; justify-content: flex-end; }
@@ -110,7 +110,7 @@
       </div>
     </div>
     <div class="footer">
-      &copy; First Bus &ndash; Quick Access Portal
+      © First Bus – Quick Access Portal
     </div>
   </div>
   <script>
@@ -198,11 +198,11 @@
     async function loadEntries(dateStr) {
       try {
         const url = `${GOOGLE_SHEETS_ENDPOINT}?date=${encodeURIComponent(dateStr)}`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Network response was not ok.');
+        const response = await fetch(url, { mode: 'cors' });
+        if (!response.ok) throw new Error(`Network response was not ok. Status: ${response.status} ${response.statusText}`);
         return await response.json();
       } catch (error) {
-        console.error('Error loading entries:', error);
+        console.error('Error loading entries:', error.message);
         return [];
       }
     }
@@ -211,15 +211,24 @@
       try {
         const response = await fetch(GOOGLE_SHEETS_ENDPOINT, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           body: JSON.stringify(entries)
         });
-        if (!response.ok) throw new Error('Network response was not ok.');
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Network response was not ok. Status: ${response.status} ${response.statusText}. Response: ${errorText}`);
+        }
         const result = await response.json();
-        if (result.status !== 'success') throw new Error('Failed to save entries.');
+        if (result.status !== 'success') {
+          throw new Error(`Failed to save entries. Response: ${JSON.stringify(result)}`);
+        }
         return true;
       } catch (error) {
-        console.error('Error saving entries:', error);
+        console.error('Error saving entries:', error.message);
         return false;
       }
     }
@@ -307,7 +316,7 @@
             newEntries.push({name, date: days[i].date, duty});
           }
         }
-        if(newEntries.length == 5){
+        if(newEntries.length == 0){
           alert("No duties entered. Please fill at least one!");
           return false;
         }
