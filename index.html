@@ -146,28 +146,33 @@
     });
 
     // --------- Duty Roster Logic -----------
-    const GOOGLE_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbwMWD0meJOnw9FfrM9HeShT-eYwPhpT_HplUOdj6B4WevRK1g9dlKxTwo5POEX1VC7Q/exec";
+    // Google Form URL and field IDs
+    const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeQ91haVeFLxHLn1WrwGWNM0vpmAoDfbjaS1AihHYI9s6STOA/formResponse";
+    const FORM_FIELD_NAME = "entry.1178796916";
+    const FORM_FIELD_DATE = "entry.1742102276";
+    const FORM_FIELD_DUTY = "entry.694160622";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxk_Vyvau86TDQVD1Z4MXEH-ySdTeaBuMUT3N08lc7ibE8gRGc9dXnyVkB3QIzJ9l_d/exec";
 
-    function pad(n){return n<10?'0'+n:n;}
-    function getDateYYYYMMDD(date){
-      return date.getFullYear()+'-'+pad(date.getMonth()+1)+'-'+pad(date.getDate());
+    function pad(n) { return n < 10 ? '0' + n : n; }
+    function getDateYYYYMMDD(date) {
+      return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
     }
     function dateToDisplay(date) {
       const d = new Date(date);
-      return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+      return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
     }
-    function getNextSaturday(){
+    function getNextSaturday() {
       let d = new Date();
       let day = d.getDay();
       let diff = (6 - day);
       let nextSat = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
       return nextSat;
     }
-    function setDateLimits(){
+    function setDateLimits() {
       let today = new Date();
       let nextSat = getNextSaturday();
       let minStr = getDateYYYYMMDD(today);
-      let maxDay = new Date(nextSat.getFullYear(), nextSat.getMonth(), nextSat.getDate()+13);
+      let maxDay = new Date(nextSat.getFullYear(), nextSat.getMonth(), nextSat.getDate() + 13);
       let maxStr = getDateYYYYMMDD(maxDay);
 
       document.getElementById('view-date').setAttribute('min', minStr);
@@ -181,23 +186,25 @@
     // ---- Duty Dropdown Helper ----
     function getDutyOptionsHtml(selectedValue) {
       const duties = [];
-      for(let i=1;i<=11;i++) {
+      for (let i = 1; i <= 10; i++) {
         duties.push(`FW${i}E`);
         duties.push(`FW${i}L`);
       }
+      duties.push('SpareE');
+      duties.push('SpareL');
       duties.push('RD');
       duties.push('AH');
       let html = '<option value="">(none)</option>';
-      for(const duty of duties){
-        html += `<option value="${duty}" ${(selectedValue===duty)?"selected":""}>${duty}</option>`;
+      for (const duty of duties) {
+        html += `<option value="${duty}" ${(selectedValue === duty) ? "selected" : ""}>${duty}</option>`;
       }
       return html;
     }
 
-    // ------------ LOAD/SAVE FUNCTIONS USING SHEETS -----------------
+    // ------------ Load Duties Using Apps Script -----------------
     async function loadEntries(dateStr) {
       try {
-        const url = `${GOOGLE_SHEETS_ENDPOINT}?date=${encodeURIComponent(dateStr)}`;
+        const url = `${APPS_SCRIPT_URL}?date=${encodeURIComponent(dateStr)}`;
         const response = await fetch(url, { mode: 'cors' });
         if (!response.ok) throw new Error(`Network response was not ok. Status: ${response.status} ${response.statusText}`);
         return await response.json();
@@ -207,33 +214,7 @@
       }
     }
 
-    async function saveEntries(entries) {
-      try {
-        const response = await fetch(GOOGLE_SHEETS_ENDPOINT, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(entries)
-        });
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Network response was not ok. Status: ${response.status} ${response.statusText}. Response: ${errorText}`);
-        }
-        const result = await response.json();
-        if (result.status !== 'success') {
-          throw new Error(`Failed to save entries. Response: ${JSON.stringify(result)}`);
-        }
-        return true;
-      } catch (error) {
-        console.error('Error saving entries:', error.message);
-        return false;
-      }
-    }
-
-    // ---- Show entries for date (Calls loadEntries) ----
+    // ---- Show Entries for Date (Calls loadEntries) ----
     async function showEntriesForDate(dateStr) {
       const list = document.getElementById('dutyList');
       list.innerHTML = '';
@@ -250,21 +231,21 @@
       }
     }
 
-    document.getElementById('view-date').addEventListener('change', function(){
+    document.getElementById('view-date').addEventListener('change', function() {
       showEntriesForDate(this.value);
     });
     showEntriesForDate(document.getElementById('view-date').value);
 
     // ---- Bulk Form Logic ----
-    document.getElementById('showBulkDuty').addEventListener('click', function(){
+    document.getElementById('showBulkDuty').addEventListener('click', function() {
       showBulkForm();
     });
 
     function showBulkForm() {
       const startSat = getNextSaturday();
       let days = [];
-      for(let i=0;i<14;i++){
-        let d = new Date(startSat.getFullYear(),startSat.getMonth(),startSat.getDate()+i);
+      for (let i = 0; i < 14; i++) {
+        let d = new Date(startSat.getFullYear(), startSat.getMonth(), startSat.getDate() + i);
         days.push({
           date: getDateYYYYMMDD(d),
           display: dateToDisplay(d)
@@ -272,13 +253,13 @@
       }
       let area = document.getElementById('bulkDutyFormArea');
       let html = `
-      <form id="bulkDutyForm" class="duty-bulk-form">
+      <div class="duty-bulk-form">
         <label for="bulk-name">Your Name</label>
         <input type="text" id="bulk-name" maxlength="36" autocomplete="off" placeholder="e.g. Chris B" required>
         <table>
           <thead><tr><th>Date</th><th>Duty</th></tr></thead>
           <tbody>
-          ${days.map((d,i)=>`
+          ${days.map((d, i) => `
             <tr>
               <td><b>${d.display}</b><br><small>${d.date}</small></td>
               <td>
@@ -291,55 +272,72 @@
           </tbody>
         </table>
         <div class="actions" style="margin-top:17px;">
-          <button type="submit">Save All Duties</button>
-          <button type="button" id="cancelBulk" style="margin-left:12px;background:#bbb;color:#2c0078;">Cancel</button>
+          <button id="saveDuties" type="button">Save All Duties</button>
+          <button id="cancelBulk" type="button" style="margin-left:12px;background:#bbb;color:#2c0078;">Cancel</button>
         </div>
         <div id="submitStatus" style="margin:7px 0 0 0;font-size:0.98em;"></div>
-      </form>
+      </div>
       `;
       area.innerHTML = html;
 
       document.getElementById('cancelBulk').onclick = () => { area.innerHTML = ''; };
 
-      document.getElementById('bulkDutyForm').onsubmit = async function(e){
-        e.preventDefault();
+      document.getElementById('saveDuties').onclick = async function() {
         let name = document.getElementById('bulk-name').value.trim();
-        if(!name){
+        if (!name) {
           alert('Please enter your name.');
-          return false;
+          return;
         }
         let newEntries = [];
-        for(let i=0;i<14;i++){
-          let dutySel = document.getElementById('bulk-duty-'+i);
+        for (let i = 0; i < 14; i++) {
+          let dutySel = document.getElementById('bulk-duty-' + i);
           let duty = dutySel.value;
-          if(duty){
-            newEntries.push({name, date: days[i].date, duty});
+          if (duty) {
+            newEntries.push({ name, date: days[i].date, duty });
           }
         }
-        if(newEntries.length == 0){
+        if (newEntries.length === 0) {
           alert("No duties entered. Please fill at least one!");
-          return false;
+          return;
         }
 
         let submitStatus = document.getElementById('submitStatus');
         submitStatus.textContent = "Submitting to rota sheet…";
         submitStatus.style.color = "#836cf4";
-        let saved = await saveEntries(newEntries);
-        if(saved){
+        let successCount = 0;
+        for (let entry of newEntries) {
+          const formData = new FormData();
+          formData.append(FORM_FIELD_NAME, entry.name);
+          formData.append(FORM_FIELD_DATE, entry.date);
+          formData.append(FORM_FIELD_DUTY, entry.duty);
+          try {
+            const response = await fetch(GOOGLE_FORM_URL, {
+              method: 'POST',
+              body: formData,
+              mode: 'no-cors'
+            });
+            successCount++;
+          } catch (error) {
+            console.error('Error submitting duty:', error);
+            submitStatus.textContent = "❌ Error saving to rota sheet.";
+            submitStatus.style.color = "#d70a33";
+            return;
+          }
+        }
+        if (successCount === newEntries.length) {
           submitStatus.textContent = "✅ Rota duties saved to rota sheet!";
           submitStatus.style.color = "#44b261";
-          setTimeout(()=>{ area.innerHTML = ''; }, 1200);
+          setTimeout(() => { area.innerHTML = ''; }, 1200);
+          let currView = document.getElementById('view-date').value;
+          if (currView && newEntries.some(en => en.date === currView)) {
+            showEntriesForDate(currView);
+          }
         } else {
-          submitStatus.textContent = "❌ Error saving to rota sheet.";
+          submitStatus.textContent = "❌ Some duties failed to save.";
           submitStatus.style.color = "#d70a33";
         }
-        let currView = document.getElementById('view-date').value;
-        if(currView && newEntries.some(en=>en.date===currView)){
-          showEntriesForDate(currView);
-        }
-        return false;
-      }
+      };
     }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935fdfca3a16bffa',t:'MTc0NTYwNTQzNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
