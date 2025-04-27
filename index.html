@@ -76,7 +76,7 @@
           <option value="https://bc.tranzaura.com/Login">Tranzaura Login</option>
           <option value="https://selfservice.ratpdev.uk/llubdasweb/web/html/wbsyslogin.r?co=0&lg=0">RATPdev Self Service</option>
           <option value="https://vulcan.ratpdev.com/_dashboards/app/">RATPdev Vulcan Dashboards</option>
-        </select>
+ </select>
         <div class="actions">
           <button id="openWebsite" disabled>Open Website</button>
         </div>
@@ -86,7 +86,7 @@
         <select id="fileDropdown">
           <option value="">Select a file…</option>
           <option value="files/20050325%20-%20V16%20SIRF%20Template.xlsx">20050325 - V16 SIRF Template (Excel)</option>
-          <option value="files/ANNUAL%20LEAVE%20REQUEST%20FORM.docx">Annual Leave Request Form (Word)</option>
+          <option value="files/Annual%20Leave%20Request%20Form.docx">Annual Leave Request Form (Word)</option>
           <option value="files/BLANK%20TIMESHEET%20LATEST%20VERSION.xlsm">Blank Timesheet Latest Version (Excel)</option>
           <option value="files/BR43%20-%20Blank%20form.doc">BR43 - Blank Form (Word)</option>
           <option value="files/Bus%20Running%20Record.pdf">Bus Running Record (PDF)</option>
@@ -140,7 +140,7 @@
     });
 
     const fileDd = document.getElementById('fileDropdown');
-    const openFileBtn = document.getElementById('openFile');
+    const openFileBtn = document.getElement ofId('openFile');
     fileDd.addEventListener('change', () => {
       openFileBtn.disabled = !fileDd.value;
     });
@@ -219,7 +219,7 @@
 
     // ---- Show Entries for Date (Calls loadEntries) ----
     async function showEntriesForDate(dateStr) {
-      const list = document.getElementById('dutyList');
+      const list = document.getElement ofId('dutyList');
       list.innerHTML = '';
       const entries = await loadEntries(dateStr);
       if (entries.length === 0) {
