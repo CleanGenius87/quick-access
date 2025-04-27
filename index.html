@@ -1,346 +1,347 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>First Bus Quick Access & Duty Roster</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      background: #2c0078;
-      font-family: 'Montserrat', Arial, sans-serif;
-      color: #fff;
-      margin: 0;
-      min-height: 100vh;
-    }
-    .container {
-      background: #fff; color: #2c0078; max-width: 520px;
-      margin: 64px auto 0 auto; padding: 36px 36px 32px 36px; border-radius: 18px;
-      box-shadow: 0 8px 40px rgba(44,0,120,0.11); display: flex; flex-direction: column; align-items: center;
-    }
-    .logo { width: 180px; margin-bottom: 35px; display: block; }
-    .tabs { display: flex; justify-content: center; width: 100%; margin-bottom: 30px; }
-    .tab { flex: 1; padding: 13px 0; text-align: center;
-      background: #ede7fd; color: #2c0078; font-weight: 600; font-size: 1.04rem;
-      cursor: pointer; margin: 0 3px; border-radius: 7px 7px 0 0;
-      border-bottom: 3px solid transparent; transition: all 0.12s; outline: none;
-    }
-    .tab.active { background: #fff; color: #ff44d0; border-bottom: 3px solid #ff44d0; }
-    .tab-content { display: none; width: 100%; }
-    .tab-content.active { display: block; }
-    .dropdown-section, .duty-form-section { width: 100%; margin-bottom: 24px; }
-    label { font-weight: bold; margin-bottom: 8px; display: block; font-size: 1.05rem; color: #2c0078;}
-    select, input[type="text"], input[type="date"] {
-      width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
-      margin-bottom: 6px; background: #faf7ff; color: #2c0078;
-    }
-    .actions { margin-top: 14px; width: 100%; display: flex; justify-content: flex-end; }
-    button { border: none; border-radius: 6px; padding: 9px 22px; background: #ff44d0; color: #fff;
-      font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.16s; min-width: 120px;
-      box-shadow: 0 2px 10px rgba(44,0,120,0.04);
-    }
-    button:disabled { background: #c7b2f7; cursor: not-allowed;}
-    .duty-list { margin-top: 20px; margin-bottom: 8px; padding-left: 0px; list-style:none;}
-    .duty-list li { background: #ede7fd; border-radius: 6px; padding: 9px 14px 7px 14px; margin-bottom: 9px;
-      font-size: 1rem; font-weight: 500; color: #36297d;}
-    .duty-bulk-form { margin-top: 16px; background: #faf7ff; border-radius: 7px; padding: 16px 10px 7px 10px; margin-bottom: 16px;
-      box-shadow: 0 2px 6px rgba(44,0,120,0.04); font-size: 0.98rem; color:#222;}
-    .duty-bulk-form table { width: 100%; border-collapse: collapse; margin-top: 8px;}
-    .duty-bulk-form th, .duty-bulk-form td { border-bottom: 1px solid #e2e2ee; padding: 6px 4px; text-align: left; font-size: 0.99rem;}
-    .duty-bulk-form select { width: 96%; padding: 7px 9px; margin: 0; border-radius: 5px; border: 1.1px solid #bbb; font-size: 0.99rem; background: #fff; color: #251459;}
-    .footer { color: #faf7ff99; text-align: center; font-size: 0.93rem; margin-top: 48px;}
-    .duty-bulk-form label[for="bulk-name"] {margin-bottom: 11px;}
-    @media (max-width: 600px) {
-      .container {padding: 12px 2vw; max-width: 100vw;}
-      .logo {width: 48vw; max-width: 225px;}
-      .duty-bulk-form select {width: 99%;}
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <img src="https://www.firstbus.co.uk/themes/custom/first_bus/logo.svg" class="logo" alt="First Bus Logo">
-    <div class="tabs">
-      <div class="tab active" data-tab="access">Quick Access</div>
-      <div class="tab" data-tab="roster">Duty Roster</div>
-    </div>
-    <!-- Tab 1: Quick Access -->
-    <div class="tab-content active" id="tab-access">
-      <div class="dropdown-section">
-        <label for="websiteDropdown">Company Websites</label>
-        <select id="websiteDropdown">
-          <option value="">Select a website…</option>
-          <option value="https://plan.tomtom.com/">TomTom Plan</option>
-          <option value="https://one.network/">one.network</option>
-          <option value="https://networkmanagementcc.blogspot.com/">Network Management CC Blogspot</option>
-          <option value="https://central.greenroad.com/Pages/Login.aspx">GreenRoad Central Login</option>
-          <option value="https://bc.tranzaura.com/Login">Tranzaura Login</option>
-          <option value="https://selfservice.ratpdev.uk/llubdasweb/web/html/wbsyslogin.r?co=0&lg=0">RATPdev Self Service</option>
-          <option value="https://vulcan.ratpdev.com/_dashboards/app/">RATPdev Vulcan Dashboards</option>
-        </select>
-        <div class="actions">
-          <button id="openWebsite" disabled>Open Website</button>
-        </div>
-      </div>
-      <div class="dropdown-section">
-        <label for="fileDropdown">Local Files</label>
-        <select id="fileDropdown">
-          <option value="">Select a file…</option>
-          <option value="files/20050325%20-%20V16%20SIRF%20Template.xlsx">20050325 - V16 SIRF Template (Excel)</option>
-          <option value="files/Annual%20Leave%20Request%20Form.docx">Annual Leave Request Form (Word)</option>
-          <option value="files/BLANK%20TIMESHEET%20LATEST%20VERSION.xlsm">Blank Timesheet Latest Version (Excel)</option>
-          <option value="files/BR43%20-%20Blank%20form.doc">BR43 - Blank Form (Word)</option>
-          <option value="files/Bus%20Running%20Record.pdf">Bus Running Record (PDF)</option>
-          <option value="files/Fulwell%20battery%20sheet.xlsx">Fulwell Battery Sheet (Excel)</option>
-          <option value="files/IBUS%20Report%20Form%20-%20NEW.xls">IBUS Report Form - NEW (Excel)</option>
-          <option value="files/Official%20report%20blank.xlsm">Official Report Blank (Excel)</option>
-        </select>
-        <div class="actions">
-          <button id="openFile" disabled>Download File</button>
-        </div>
-      </div>
-    </div>
+   <!-- Forcing GitHub Pages redeploy to clear cache and fix 404 errors -->
+   <html lang="en">
+   <head>
+     <meta charset="UTF-8">
+     <title>First Bus Quick Access & Duty Roster</title>
+     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+     <style>
+       body {
+         background: #2c0078;
+         font-family: 'Montserrat', Arial, sans-serif;
+         color: #fff;
+         margin: 0;
+         min-height: 100vh;
+       }
+       .container {
+         background: #fff; color: #2c0078; max-width: 520px;
+         margin: 64px auto 0 auto; padding: 36px 36px 32px 36px; border-radius: 18px;
+         box-shadow: 0 8px 40px rgba(44,0,120,0.11); display: flex; flex-direction: column; align-items: center;
+       }
+       .logo { width: 180px; margin-bottom: 35px; display: block; }
+       .tabs { display: flex; justify-content: center; width: 100%; margin-bottom: 30px; }
+       .tab { flex: 1; padding: 13px 0; text-align: center;
+         background: #ede7fd; color: #2c0078; font-weight: 600; font-size: 1.04rem;
+         cursor: pointer; margin: 0 3px; border-radius: 7px 7px 0 0;
+         border-bottom: 3px solid transparent; transition: all 0.12s; outline: none;
+       }
+       .tab.active { background: #fff; color: #ff44d0; border-bottom: 3px solid #ff44d0; }
+       .tab-content { display: none; width: 100%; }
+       .tab-content.active { display: block; }
+       .dropdown-section, .duty-form-section { width: 100%; margin-bottom: 24px; }
+       label { font-weight: bold; margin-bottom: 8px; display: block; font-size: 1.05rem; color: #2c0078;}
+       select, input[type="text"], input[type="date"] {
+         width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
+         margin-bottom: 6px; background: #faf7ff; color: #2c0078;
+       }
+       .actions { margin-top: 14px; width: 100%; display: flex; justify-content: flex-end; }
+       button { border: none; border-radius: 6px; padding: 9px 22px; background: #ff44d0; color: #fff;
+         font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.16s; min-width: 120px;
+         box-shadow: 0 2px 10px rgba(44,0,120,0.04);
+       }
+       button:disabled { background: #c7b2f7; cursor: not-allowed;}
+       .duty-list { margin-top: 20px; margin-bottom: 8px; padding-left: 0px; list-style:none;}
+       .duty-list li { background: #ede7fd; border-radius: 6px; padding: 9px 14px 7px 14px; margin-bottom: 9px;
+         font-size: 1rem; font-weight: 500; color: #36297d;}
+       .duty-bulk-form { margin-top: 16px; background: #faf7ff; border-radius: 7px; padding: 16px 10px 7px 10px; margin-bottom: 16px;
+         box-shadow: 0 2px 6px rgba(44,0,120,0.04); font-size: 0.98rem; color:#222;}
+       .duty-bulk-form table { width: 100%; border-collapse: collapse; margin-top: 8px;}
+       .duty-bulk-form th, .duty-bulk-form td { border-bottom: 1px solid #e2e2ee; padding: 6px 4px; text-align: left; font-size: 0.99rem;}
+       .duty-bulk-form select { width: 96%; padding: 7px 9px; margin: 0; border-radius: 5px; border: 1.1px solid #bbb; font-size: 0.99rem; background: #fff; color: #251459;}
+       .footer { color: #faf7ff99; text-align: center; font-size: 0.93rem; margin-top: 48px;}
+       .duty-bulk-form label[for="bulk-name"] {margin-bottom: 11px;}
+       @media (max-width: 600px) {
+         .container {padding: 12px 2vw; max-width: 100vw;}
+         .logo {width: 48vw; max-width: 225px;}
+         .duty-bulk-form select {width: 99%;}
+       }
+     </style>
+   </head>
+   <body>
+     <div class="container">
+       <img src="https://www.firstbus.co.uk/themes/custom/first_bus/logo.svg" class="logo" alt="First Bus Logo">
+       <div class="tabs">
+         <div class="tab active" data-tab="access">Quick Access</div>
+         <div class="tab" data-tab="roster">Duty Roster</div>
+       </div>
+       <!-- Tab 1: Quick Access -->
+       <div class="tab-content active" id="tab-access">
+         <div class="dropdown-section">
+           <label for="websiteDropdown">Company Websites</label>
+           <select id="websiteDropdown">
+             <option value="">Select a website…</option>
+             <option value="https://plan.tomtom.com/">TomTom Plan</option>
+             <option value="https://one.network/">one.network</option>
+             <option value="https://networkmanagementcc.blogspot.com/">Network Management CC Blogspot</option>
+             <option value="https://central.greenroad.com/Pages/Login.aspx">GreenRoad Central Login</option>
+             <option value="https://bc.tranzaura.com/Login">Tranzaura Login</option>
+             <option value="https://selfservice.ratpdev.uk/llubdasweb/web/html/wbsyslogin.r?co=0&lg=0">RATPdev Self Service</option>
+             <option value="https://vulcan.ratpdev.com/_dashboards/app/">RATPdev Vulcan Dashboards</option>
+           </select>
+           <div class="actions">
+             <button id="openWebsite" disabled>Open Website</button>
+           </div>
+         </div>
+         <div class="dropdown-section">
+           <label for="fileDropdown">Local Files</label>
+           <select id="fileDropdown">
+             <option value="">Select a file…</option>
+             <option value="files/20050325%20-%20V16%20SIRF%20Template.xlsx">20050325 - V16 SIRF Template (Excel)</option>
+             <option value="files/Annual%20Leave%20Request%20Form.docx">Annual Leave Request Form (Word)</option>
+             <option value="files/BLANK%20TIMESHEET%20LATEST%20VERSION.xlsm">Blank Timesheet Latest Version (Excel)</option>
+             <option value="files/BR43%20-%20Blank%20form.doc">BR43 - Blank Form (Word)</option>
+             <option value="files/Bus%20Running%20Record.pdf">Bus Running Record (PDF)</option>
+             <option value="files/Fulwell%20battery%20sheet.xlsx">Fulwell Battery Sheet (Excel)</option>
+             <option value="files/IBUS%20Report%20Form%20-%20NEW.xls">IBUS Report Form - NEW (Excel)</option>
+             <option value="files/Official%20report%20blank.xlsm">Official Report Blank (Excel)</option>
+           </select>
+           <div class="actions">
+             <button id="openFile" disabled>Download File</button>
+           </div>
+         </div>
+       </div>
 
-    <!-- Tab 2: Duty Roster -->
-    <div class="tab-content" id="tab-roster">
-      <div class="actions" style="margin-top:0;margin-bottom:17px;">
-        <button id="showBulkDuty">Add My Duties (Next 2 Weeks)</button>
-      </div>
-      <div id="bulkDutyFormArea"></div>
-      <div style="margin-top:9px;">
-        <label for="view-date">See Who’s Working (choose a date):</label>
-        <input type="date" id="view-date">
-        <ul class="duty-list" id="dutyList"></ul>
-      </div>
-    </div>
-    <div class="footer">
-      © First Bus – Quick Access Portal
-    </div>
-  </div>
-  <script>
-    // ---------------- Tab UI Logic ----------------
-    const tabs = document.querySelectorAll('.tab');
-    const tabContents = document.querySelectorAll('.tab-content');
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        tabContents.forEach(tc => tc.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
-      });
-    });
+       <!-- Tab 2: Duty Roster -->
+       <div class="tab-content" id="tab-roster">
+         <div class="actions" style="margin-top:0;margin-bottom:17px;">
+           <button id="showBulkDuty">Add My Duties (Next 2 Weeks)</button>
+         </div>
+         <div id="bulkDutyFormArea"></div>
+         <div style="margin-top:9px;">
+           <label for="view-date">See Who’s Working (choose a date):</label>
+           <input type="date" id="view-date">
+           <ul class="duty-list" id="dutyList"></ul>
+         </div>
+       </div>
+       <div class="footer">
+         © First Bus – Quick Access Portal
+       </div>
+     </div>
+     <script>
+       // ---------------- Tab UI Logic ----------------
+       const tabs = document.querySelectorAll('.tab');
+       const tabContents = document.querySelectorAll('.tab-content');
+       tabs.forEach(tab => {
+         tab.addEventListener('click', () => {
+           tabs.forEach(t => t.classList.remove('active'));
+           tabContents.forEach(tc => tc.classList.remove('active'));
+           tab.classList.add('active');
+           document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+         });
+       });
 
-    // ------------ Quick Access Logic -------------
-    const siteDd = document.getElementById('websiteDropdown');
-    const openWebsiteBtn = document.getElementById('openWebsite');
-    siteDd.addEventListener('change', () => {
-      openWebsiteBtn.disabled = !siteDd.value;
-    });
-    openWebsiteBtn.addEventListener('click', () => {
-      if (siteDd.value) window.open(siteDd.value, '_blank');
-    });
+       // ------------ Quick Access Logic -------------
+       const siteDd = document.getElementById('websiteDropdown');
+       const openWebsiteBtn = document.getElementById('openWebsite');
+       siteDd.addEventListener('change', () => {
+         openWebsiteBtn.disabled = !siteDd.value;
+       });
+       openWebsiteBtn.addEventListener('click', () => {
+         if (siteDd.value) window.open(siteDd.value, '_blank');
+       });
 
-    const fileDd = document.getElementById('fileDropdown');
-    const openFileBtn = document.getElementById('openFile');
-    fileDd.addEventListener('change', () => {
-      openFileBtn.disabled = !fileDd.value;
-    });
-    openFileBtn.addEventListener('click', () => {
-      if (fileDd.value) window.open(fileDd.value, '_blank');
-    });
+       const fileDd = document.getElementById('fileDropdown');
+       const openFileBtn = document.getElementById('openFile');
+       fileDd.addEventListener('change', () => {
+         openFileBtn.disabled = !fileDd.value;
+       });
+       openFileBtn.addEventListener('click', () => {
+         if (fileDd.value) window.open(fileDd.value, '_blank');
+       });
 
-    // --------- Duty Roster Logic -----------
-    // Google Form URL and field IDs
-    const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeQ91haVeFLxHLn1WrwGWNM0vpmAoDfbjaS1AihHYI9s6STOA/formResponse";
-    const FORM_FIELD_NAME = "entry.1178796916";
-    const FORM_FIELD_DATE = "entry.1742102276";
-    const FORM_FIELD_DUTY = "entry.694160622";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxk_Vyvau86TDQVD1Z4MXEH-ySdTeaBuMUT3N08lc7ibE8gRGc9dXnyVkB3QIzJ9l_d/exec";
+       // --------- Duty Roster Logic -----------
+       // Google Form URL and field IDs
+       const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeQ91haVeFLxHLn1WrwGWNM0vpmAoDfbjaS1AihHYI9s6STOA/formResponse";
+       const FORM_FIELD_NAME = "entry.1178796916";
+       const FORM_FIELD_DATE = "entry.1742102276";
+       const FORM_FIELD_DUTY = "entry.694160622";
+       const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxk_Vyvau86TDQVD1Z4MXEH-ySdTeaBuMUT3N08lc7ibE8gRGc9dXnyVkB3QIzJ9l_d/exec";
 
-    function pad(n) { return n < 10 ? '0' + n : n; }
-    function getDateYYYYMMDD(date) {
-      return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
-    }
-    function dateToDisplay(date) {
-      const d = new Date(date);
-      return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-    }
-    function getNextSaturday() {
-      let d = new Date();
-      let day = d.getDay();
-      let diff = (6 - day);
-      let nextSat = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
-      return nextSat;
-    }
-    function setDateLimits() {
-      let today = new Date();
-      let nextSat = getNextSaturday();
-      let minStr = getDateYYYYMMDD(today);
-      let maxDay = new Date(nextSat.getFullYear(), nextSat.getMonth(), nextSat.getDate() + 13);
-      let maxStr = getDateYYYYMMDD(maxDay);
+       function pad(n) { return n < 10 ? '0' + n : n; }
+       function getDateYYYYMMDD(date) {
+         return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+       }
+       function dateToDisplay(date) {
+         const d = new Date(date);
+         return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+       }
+       function getNextSaturday() {
+         let d = new Date();
+         let day = d.getDay();
+         let diff = (6 - day);
+         let nextSat = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
+         return nextSat;
+       }
+       function setDateLimits() {
+         let today = new Date();
+         let nextSat = getNextSaturday();
+         let minStr = getDateYYYYMMDD(today);
+         let maxDay = new Date(nextSat.getFullYear(), nextSat.getMonth(), nextSat.getDate() + 13);
+         let maxStr = getDateYYYYMMDD(maxDay);
 
-      document.getElementById('view-date').setAttribute('min', minStr);
-      document.getElementById('view-date').setAttribute('max', maxStr);
+         document.getElementById('view-date').setAttribute('min', minStr);
+         document.getElementById('view-date').setAttribute('max', maxStr);
 
-      let defaultDate = today > nextSat ? today : nextSat;
-      document.getElementById('view-date').value = getDateYYYYMMDD(defaultDate);
-    }
-    setDateLimits();
+         let defaultDate = today > nextSat ? today : nextSat;
+         document.getElementById('view-date').value = getDateYYYYMMDD(defaultDate);
+       }
+       setDateLimits();
 
-    // ---- Duty Dropdown Helper ----
-    function getDutyOptionsHtml(selectedValue) {
-      const duties = [];
-      for (let i = 1; i <= 10; i++) {
-        duties.push(`FW${i}E`);
-        duties.push(`FW${i}L`);
-      }
-      duties.push('SpareE');
-      duties.push('SpareL');
-      duties.push('RD');
-      duties.push('AH');
-      let html = '<option value="">(none)</option>';
-      for (const duty of duties) {
-        html += `<option value="${duty}" ${(selectedValue === duty) ? "selected" : ""}>${duty}</option>`;
-      }
-      return html;
-    }
+       // ---- Duty Dropdown Helper ----
+       function getDutyOptionsHtml(selectedValue) {
+         const duties = [];
+         for (let i = 1; i <= 10; i++) {
+           duties.push(`FW${i}E`);
+           duties.push(`FW${i}L`);
+         }
+         duties.push('SpareE');
+         duties.push('SpareL');
+         duties.push('RD');
+         duties.push('AH');
+         let html = '<option value="">(none)</option>';
+         for (const duty of duties) {
+           html += `<option value="${duty}" ${(selectedValue === duty) ? "selected" : ""}>${duty}</option>`;
+         }
+         return html;
+       }
 
-    // ------------ Load Duties Using Apps Script -----------------
-    async function loadEntries(dateStr) {
-      try {
-        const url = `${APPS_SCRIPT_URL}?date=${encodeURIComponent(dateStr)}`;
-        const response = await fetch(url, { mode: 'cors' });
-        if (!response.ok) throw new Error(`Network response was not ok. Status: ${response.status} ${response.statusText}`);
-        return await response.json();
-      } catch (error) {
-        console.error('Error loading entries:', error.message);
-        return [];
-      }
-    }
+       // ------------ Load Duties Using Apps Script -----------------
+       async function loadEntries(dateStr) {
+         try {
+           const url = `${APPS_SCRIPT_URL}?date=${encodeURIComponent(dateStr)}`;
+           const response = await fetch(url, { mode: 'cors' });
+           if (!response.ok) throw new Error(`Network response was not ok. Status: ${response.status} ${response.statusText}`);
+           return await response.json();
+         } catch (error) {
+           console.error('Error loading entries:', error.message);
+           return [];
+         }
+       }
 
-    // ---- Show Entries for Date (Calls loadEntries) ----
-    async function showEntriesForDate(dateStr) {
-      const list = document.getElementById('dutyList');
-      list.innerHTML = '';
-      const entries = await loadEntries(dateStr);
-      if (entries.length === 0) {
-        list.innerHTML = '<li>No duties recorded for this date.</li>';
-      } else {
-        entries.sort((a, b) => a.name.localeCompare(b.name));
-        entries.forEach(e => {
-          const li = document.createElement('li');
-          li.textContent = `${e.name}: ${e.duty}`;
-          list.appendChild(li);
-        });
-      }
-    }
+       // ---- Show Entries for Date (Calls loadEntries) ----
+       async function showEntriesForDate(dateStr) {
+         const list = document.getElementById('dutyList');
+         list.innerHTML = '';
+         const entries = await loadEntries(dateStr);
+         if (entries.length === 0) {
+           list.innerHTML = '<li>No duties recorded for this date.</li>';
+         } else {
+           entries.sort((a, b) => a.name.localeCompare(b.name));
+           entries.forEach(e => {
+             const li = document.createElement('li');
+             li.textContent = `${e.name}: ${e.duty}`;
+             list.appendChild(li);
+           });
+         }
+       }
 
-    document.getElementById('view-date').addEventListener('change', function() {
-      showEntriesForDate(this.value);
-    });
-    showEntriesForDate(document.getElementById('view-date').value);
+       document.getElementById('view-date').addEventListener('change', function() {
+         showEntriesForDate(this.value);
+       });
+       showEntriesForDate(document.getElementById('view-date').value);
 
-    // ---- Bulk Form Logic ----
-    document.getElementById('showBulkDuty').addEventListener('click', function() {
-      showBulkForm();
-    });
+       // ---- Bulk Form Logic ----
+       document.getElementById('showBulkDuty').addEventListener('click', function() {
+         showBulkForm();
+       });
 
-    function showBulkForm() {
-      const startSat = getNextSaturday();
-      let days = [];
-      for (let i = 0; i < 14; i++) {
-        let d = new Date(startSat.getFullYear(), startSat.getMonth(), startSat.getDate() + i);
-        days.push({
-          date: getDateYYYYMMDD(d),
-          display: dateToDisplay(d)
-        });
-      }
-      let area = document.getElementById('bulkDutyFormArea');
-      let html = `
-      <div class="duty-bulk-form">
-        <label for="bulk-name">Your Name</label>
-        <input type="text" id="bulk-name" maxlength="36" autocomplete="off" placeholder="e.g. Chris B" required>
-        <table>
-          <thead><tr><th>Date</th><th>Duty</th></tr></thead>
-          <tbody>
-          ${days.map((d, i) => `
-            <tr>
-              <td><b>${d.display}</b><br><small>${d.date}</small></td>
-              <td>
-                <select id="bulk-duty-${i}">
-                  ${getDutyOptionsHtml("")}
-                </select>
-              </td>
-            </tr>
-          `).join('')}
-          </tbody>
-        </table>
-        <div class="actions" style="margin-top:17px;">
-          <button id="saveDuties" type="button">Save All Duties</button>
-          <button id="cancelBulk" type="button" style="margin-left:12px;background:#bbb;color:#2c0078;">Cancel</button>
-        </div>
-        <div id="submitStatus" style="margin:7px 0 0 0;font-size:0.98em;"></div>
-      </div>
-      `;
-      area.innerHTML = html;
+       function showBulkForm() {
+         const startSat = getNextSaturday();
+         let days = [];
+         for (let i = 0; i < 14; i++) {
+           let d = new Date(startSat.getFullYear(), startSat.getMonth(), startSat.getDate() + i);
+           days.push({
+             date: getDateYYYYMMDD(d),
+             display: dateToDisplay(d)
+           });
+         }
+         let area = document.getElementById('bulkDutyFormArea');
+         let html = `
+         <div class="duty-bulk-form">
+           <label for="bulk-name">Your Name</label>
+           <input type="text" id="bulk-name" maxlength="36" autocomplete="off" placeholder="e.g. Chris B" required>
+           <table>
+             <thead><tr><th>Date</th><th>Duty</th></tr></thead>
+             <tbody>
+             ${days.map((d, i) => `
+               <tr>
+                 <td><b>${d.display}</b><br><small>${d.date}</small></td>
+                 <td>
+                   <select id="bulk-duty-${i}">
+                     ${getDutyOptionsHtml("")}
+                   </select>
+                 </td>
+               </tr>
+             `).join('')}
+             </tbody>
+           </table>
+           <div class="actions" style="margin-top:17px;">
+             <button id="saveDuties" type="button">Save All Duties</button>
+             <button id="cancelBulk" type="button" style="margin-left:12px;background:#bbb;color:#2c0078;">Cancel</button>
+           </div>
+           <div id="submitStatus" style="margin:7px 0 0 0;font-size:0.98em;"></div>
+         </div>
+         `;
+         area.innerHTML = html;
 
-      document.getElementById('cancelBulk').onclick = () => { area.innerHTML = ''; };
+         document.getElementById('cancelBulk').onclick = () => { area.innerHTML = ''; };
 
-      document.getElementById('saveDuties').onclick = async function() {
-        let name = document.getElementById('bulk-name').value.trim();
-        if (!name) {
-          alert('Please enter your name.');
-          return;
-        }
-        let newEntries = [];
-        for (let i = 0; i < 14; i++) {
-          let dutySel = document.getElementById('bulk-duty-' + i);
-          let duty = dutySel.value;
-          if (duty) {
-            newEntries.push({ name, date: days[i].date, duty });
-          }
-        }
-        if (newEntries.length === 0) {
-          alert("No duties entered. Please fill at least one!");
-          return;
-        }
+         document.getElementById('saveDuties').onclick = async function() {
+           let name = document.getElementById('bulk-name').value.trim();
+           if (!name) {
+             alert('Please enter your name.');
+             return;
+           }
+           let newEntries = [];
+           for (let i = 0; i < 14; i++) {
+             let dutySel = document.getElementById('bulk-duty-' + i);
+             let duty = dutySel.value;
+             if (duty) {
+               newEntries.push({ name, date: days[i].date, duty });
+             }
+           }
+           if (newEntries.length === 0) {
+             alert("No duties entered. Please fill at least one!");
+             return;
+           }
 
-        let submitStatus = document.getElementById('submitStatus');
-        submitStatus.textContent = "Submitting to rota sheet…";
-        submitStatus.style.color = "#836cf4";
-        let successCount = 0;
-        for (let entry of newEntries) {
-          const formData = new FormData();
-          formData.append(FORM_FIELD_NAME, entry.name);
-          formData.append(FORM_FIELD_DATE, entry.date);
-          formData.append(FORM_FIELD_DUTY, entry.duty);
-          try {
-            const response = await fetch(GOOGLE_FORM_URL, {
-              method: 'POST',
-              body: formData,
-              mode: 'no-cors'
-            });
-            successCount++;
-          } catch (error) {
-            console.error('Error submitting duty:', error);
-            submitStatus.textContent = "❌ Error saving to rota sheet.";
-            submitStatus.style.color = "#d70a33";
-            return;
-          }
-        }
-        if (successCount === newEntries.length) {
-          submitStatus.textContent = "✅ Rota duties saved to rota sheet!";
-          submitStatus.style.color = "#44b261";
-          setTimeout(() => { area.innerHTML = ''; }, 1200);
-          let currView = document.getElementById('view-date').value;
-          if (currView && newEntries.some(en => en.date === currView)) {
-            showEntriesForDate(currView);
-          }
-        } else {
-          submitStatus.textContent = "❌ Some duties failed to save.";
-          submitStatus.style.color = "#d70a33";
-        }
-      };
-    }
-  </script>
-</body>
-</html>
+           let submitStatus = document.getElementById('submitStatus');
+           submitStatus.textContent = "Submitting to rota sheet…";
+           submitStatus.style.color = "#836cf4";
+           let successCount = 0;
+           for (let entry of newEntries) {
+             const formData = new FormData();
+             formData.append(FORM_FIELD_NAME, entry.name);
+             formData.append(FORM_FIELD_DATE, entry.date);
+             formData.append(FORM_FIELD_DUTY, entry.duty);
+             try {
+               const response = await fetch(GOOGLE_FORM_URL, {
+                 method: 'POST',
+                 body: formData,
+                 mode: 'no-cors'
+               });
+               successCount++;
+             } catch (error) {
+               console.error('Error submitting duty:', error);
+               submitStatus.textContent = "❌ Error saving to rota sheet.";
+               submitStatus.style.color = "#d70a33";
+               return;
+             }
+           }
+           if (successCount === newEntries.length) {
+             submitStatus.textContent = "✅ Rota duties saved to rota sheet!";
+             submitStatus.style.color = "#44b261";
+             setTimeout(() => { area.innerHTML = ''; }, 1200);
+             let currView = document.getElementById('view-date').value;
+             if (currView && newEntries.some(en => en.date === currView)) {
+               showEntriesForDate(currView);
+             }
+           } else {
+             submitStatus.textContent = "❌ Some duties failed to save.";
+             submitStatus.style.color = "#d70a33";
+           }
+         };
+       }
+     </script>
+   </body>
+   </html>
