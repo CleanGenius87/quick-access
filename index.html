@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-29 18:00 BST -->
+<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-29 19:00 BST -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -56,7 +56,7 @@
     .footer { color: #faf7ff99; text-align: center; font-size: 0.93rem; margin-top: 48px;}
     .duty-bulk-form label[for="bulk-name"] {margin-bottom: 11px;}
     .toilet-codes { margin-top: 20px; padding: 10px; background: #ede7fd; border-radius: 6px; }
-    .toilet-codes p { margin: 5px 0; font-size: 1rem; color: #36297d; }
+    .toilet-codes p { margin: 5px 0; font-size: 1 jetsrem; color: #36297d; }
     .contact-info { font-size: 0.95rem; color: #d70a33; margin-top: 10px; }
     .handover-content { margin-top: 20px; padding: 10px; background: #ede7fd; border-radius: 6px; width: 100%; }
     .handover-content textarea {
@@ -885,21 +885,35 @@ Events taking place/due to take place: </textarea>
         });
     });
 
-    // Load and display notes from Firebase
+    // Load and display notes from Firebase, filtered by selected route
     function loadRouteNotes() {
+      let allNotes = []; // Store all notes to filter them dynamically
+
+      // Listen for changes in Firebase database
       database.ref('route-info').on('value', (snapshot) => {
         const notes = snapshot.val();
+        allNotes = notes ? Object.entries(notes).map(([id, note]) => ({ id, ...note })) : [];
+        renderNotes(); // Render notes initially based on current dropdown selection
+      });
+
+      // Function to render notes based on the selected route
+      function renderNotes() {
+        const selectedRoute = routeDd.value;
         routeNotesList.innerHTML = '';
-        if (!notes) {
-          routeNotesList.innerHTML = '<p>No route notes available.</p>';
+
+        // Filter notes by the selected route (if a route is selected)
+        const filteredNotes = selectedRoute
+          ? allNotes.filter(note => note.route === selectedRoute)
+          : [];
+
+        if (filteredNotes.length === 0) {
+          routeNotesList.innerHTML = '<p>No route notes available for this route.</p>';
           return;
         }
 
-        // Convert notes object to array and sort by timestamp (newest first)
-        const notesArray = Object.entries(notes).map(([id, note]) => ({ id, ...note }));
-        notesArray.sort((a, b) => b.timestamp - a.timestamp);
-
-        notesArray.forEach(note => {
+        // Sort by timestamp (newest first) and render
+        filteredNotes.sort((a, b) => b.timestamp - a.timestamp);
+        filteredNotes.forEach(note => {
           const noteDiv = document.createElement('div');
           noteDiv.className = 'route-note';
           const date = new Date(note.timestamp);
@@ -919,7 +933,10 @@ Events taking place/due to take place: </textarea>
               });
           });
         });
-      });
+      }
+
+      // Update notes whenever the route selection changes
+      routeDd.addEventListener('change', renderNotes);
     }
     loadRouteNotes();
 
