@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-27 19:30 BST -->
+<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-28 09:00 BST -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -117,7 +117,7 @@
     <!-- Tab 2: Duty Roster -->
     <div class="tab-content" id="tab-roster">
       <div class="actions" style="margin-top:0;margin-bottom:17px;">
-        <button id="showBulkDuty">Add My Duties (Next 2 Weeks)</button>
+        <button id="showBulkDuty">Add My Duties for Month</button>
       </div>
       <div id="bulkDutyFormArea"></div>
       <div style="margin-top:9px;">
@@ -468,41 +468,51 @@ Events taking place/due to take place: </textarea>
     });
     showEntriesForDate(document.getElementById('view-date').value);
 
-    // ---- Bulk Form Logic ----
+    // ---- Month Selection Helper ----
+    function getMonthOptions() {
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth(); // 0-11
+      let options = [];
+      // Generate options for the past 12 months and next 12 months
+      for (let i = -12; i <= 12; i++) {
+        const date = new Date(currentYear, currentMonth + i, 1);
+        const year = date.getFullYear();
+        const month = date.getMonth(); // 0-11
+        const monthName = date.toLocaleString('en-GB', { month: 'long' });
+        const value = `${year}-${pad(month + 1)}`; // Format: YYYY-MM
+        options.push({ value, label: `${monthName} ${year}` });
+      }
+      return options;
+    }
+
+    function populateMonthDropdown(dropdownId, defaultValue) {
+      const dropdown = document.getElementById(dropdownId);
+      const options = getMonthOptions();
+      dropdown.innerHTML = '<option value="">Select a month…</option>';
+      options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        if (opt.value === defaultValue) {
+          option.selected = true;
+        }
+        dropdown.appendChild(option);
+      });
+    }
+
+    // ---- Bulk Form Logic (Updated for Full Month) ----
     document.getElementById('showBulkDuty').addEventListener('click', function() {
       showBulkForm();
     });
 
     function showBulkForm() {
-      const startSat = getNextSaturday();
-      let days = [];
-      for (let i = 0; i < 14; i++) {
-        let d = new Date(startSat.getFullYear(), startSat.getMonth(), startSat.getDate() + i);
-        days.push({
-          date: getDateYYYYMMDD(d),
-          display: dateToDisplay(d)
-        });
-      }
       let area = document.getElementById('bulkDutyFormArea');
       let html = `
       <div class="duty-bulk-form">
-        <label for="bulk-name">Your Name</label>
-        <input type="text" id="bulk-name" maxlength="36" autocomplete="off" placeholder="e.g. Chris B" required>
-        <table>
-          <thead><tr><th>Date</th><th>Duty</th></tr></thead>
-          <tbody>
-          ${days.map((d, i) => `
-            <tr>
-              <td><b>${d.display}</b><br><small>${d.date}</small></td>
-              <td>
-                <select id="bulk-duty-${i}">
-                  ${getDutyOptionsHtml("")}
-                </select>
-              </td>
-            </tr>
-          `).join('')}
-          </tbody>
-        </table>
+        <label for="bulk-month">Select Month</label>
+        <select id="bulk-month"></select>
+        <div id="bulkDutyTable"></div>
         <div class="actions" style="margin-top:17px;">
           <button id="saveDuties" type="button">Save All Duties</button>
           <button id="cancelBulk" type="button" style="margin-left:12px;background:#bbb;color:#2c0078;">Cancel</button>
@@ -512,8 +522,70 @@ Events taking place/due to take place: </textarea>
       `;
       area.innerHTML = html;
 
-      document.getElementById('cancelBulk').onclick = () => { area.innerHTML = ''; };
+      // Populate the month dropdown with the current month as default
+      const today = new Date();
+      const defaultMonth = `${today.getFullYear()}-${pad(today.getMonth() + 1)}`;
+      populateMonthDropdown('bulk-month', defaultMonth);
 
+      // Update the table when the month changes
+      document.getElementById('bulk-month').addEventListener('change', function() {
+        updateBulkDutyTable(this.value);
+      });
+
+      // Initial table population
+      updateBulkDutyTable(defaultMonth);
+
+      document.getElementById('cancelBulk').onclick = () => { area.innerHTML = ''; };
+    }
+
+    function updateBulkDutyTable(monthValue) {
+      if (!monthValue) {
+        document.getElementById('bulkDutyTable').innerHTML = '<p>Please select a month.</p>';
+        return;
+      }
+
+      const [year, month] = monthValue.split('-').map(Number); // e.g., "2025-04" -> [2025, 4]
+      const startDate = new Date(year, month - 1, 1); // Month is 0-indexed in JS
+      const endDate = new Date(year, month, 0); // Last day of the month
+      const daysInMonth = endDate.getDate();
+      let days = [];
+
+      // Generate all dates in the month
+      for (let i = 1; i <= daysInMonth; i++) {
+        let d = new Date(year, month - 1, i);
+        days.push({
+          date: getDateYYYYMMDD(d),
+          display: dateToDisplay(d)
+        });
+      }
+
+      // Build the table
+      let tableHtml = `
+        <label for="bulk-name" style="margin-top:12px;">Your Name</label>
+        <input type="text" id="bulk-name" maxlength="36" autocomplete="off" placeholder="e.g. Chris B" required>
+        <table>
+          <thead><tr><th>Date</th><th>Duty</th></tr></thead>
+          <tbody>
+      `;
+      days.forEach((d, i) => {
+        tableHtml += `
+          <tr>
+            <td><b>${d.display}</b><br><small>${d.date}</small></td>
+            <td>
+              <select id="bulk-duty-${i}">
+                ${getDutyOptionsHtml("")}
+              </select>
+            </td>
+          </tr>
+        `;
+      });
+      tableHtml += `
+          </tbody>
+        </table>
+      `;
+      document.getElementById('bulkDutyTable').innerHTML = tableHtml;
+
+      // Save duties
       document.getElementById('saveDuties').onclick = async function() {
         let name = document.getElementById('bulk-name').value.trim();
         if (!name) {
@@ -521,7 +593,7 @@ Events taking place/due to take place: </textarea>
           return;
         }
         let newEntries = [];
-        for (let i = 0; i < 14; i++) {
+        for (let i = 0; i < days.length; i++) {
           let dutySel = document.getElementById('bulk-duty-' + i);
           let duty = dutySel.value;
           if (duty) {
@@ -559,7 +631,7 @@ Events taking place/due to take place: </textarea>
         if (successCount === newEntries.length) {
           submitStatus.textContent = "✅ Rota duties saved to rota sheet!";
           submitStatus.style.color = "#44b261";
-          setTimeout(() => { area.innerHTML = ''; }, 1200);
+          setTimeout(() => { document.getElementById('bulkDutyFormArea').innerHTML = ''; }, 1200);
           let currView = document.getElementById('view-date').value;
           if (currView && newEntries.some(en => en.date === currView)) {
             showEntriesForDate(currView);
@@ -666,6 +738,28 @@ Events taking place/due to take place: </textarea>
         copyHandoverBtn.style.background = '#d70a33';
       }
     });
+
+    // --------- Hidden Alarm Feature: Trigger at 18:30 Daily -----------
+    let lastAlarmDate = null; // Track the last date the alarm was triggered
+
+    function checkAlarm() {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const currentDate = getDateYYYYMMDD(now);
+
+      // Check if it's 18:30 and we haven't triggered the alarm today
+      if (hours === 18 && minutes === 30 && lastAlarmDate !== currentDate) {
+        alert("MOVE YOUR CAR");
+        lastAlarmDate = currentDate; // Update the last alarm date to prevent multiple triggers
+      }
+    }
+
+    // Check the time every minute (60,000 milliseconds)
+    setInterval(checkAlarm, 60000);
+
+    // Run the check immediately in case the app is opened exactly at 18:30
+    checkAlarm();
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'936ff448cb61bff2',t:'MTc0NTc3NDA0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
