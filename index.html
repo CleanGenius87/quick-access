@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-28 09:00 BST -->
+<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-29 16:00 BST -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -58,31 +58,18 @@
       width: 100%; height: 400px; padding: 10px; border: none; background: transparent;
       font-size: 0.95rem; color: #36297d; resize: none; font-family: 'Montserrat', Arial, sans-serif;
     }
-    .quick-note-area { margin-top: 10px; width: 100%; }
-    .quick-note-area textarea {
-      width: 100%; height: 100px; padding: 10px; border-radius: 7px; border: 1.5px solid #2c0078;
-      font-size: 1rem; background: #faf7ff; color: #2c0078; resize: vertical;
-    }
     @media (max-width: 600px) {
       .container {padding: 12px 2vw; max-width: 100vw;}
       .logo {width: 48vw; max-width: 225px;}
       .duty-bulk-form select {width: 99%;}
       .tab { font-size: 0.95rem; padding: 10px 0; }
       .handover-content textarea { height: 300px; font-size: 0.9rem; }
-      .quick-note-area textarea { height: 80px; font-size: 0.9rem; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <img src="https://www.firstbus.co.uk/themes/custom/first_bus/logo.svg" class="logo" alt="First Bus Logo">
-    <div style="width:100%;text-align:right;margin-bottom:20px;">
-      <button id="openOutlook" style="background:#ff44d0;color:#fff;padding:8px 16px;border-radius:6px;font-size:0.95rem;">Open Outlook</button>
-      <button id="toggleQuickNote" style="background:#ff44d0;color:#fff;padding:8px 16px;border-radius:6px;font-size:0.95rem;margin-left:10px;">Quick Note</button>
-    </div>
-    <div class="quick-note-area" id="quickNoteArea" style="display:none;">
-      <textarea id="quickNoteText" placeholder="Type your notes here..."></textarea>
-    </div>
     <div class="tabs">
       <div class="tab active" data-tab="access">Quick Access</div>
       <div class="tab" data-tab="roster">Duty Roster</div>
@@ -361,6 +348,7 @@ Events taking place/due to take place: </textarea>
       © First Bus – Quick Access Portal
     </div>
   </div>
+
   <script>
     // ---------------- Tab UI Logic ----------------
     const tabs = document.querySelectorAll('.tab');
@@ -370,7 +358,7 @@ Events taking place/due to take place: </textarea>
         tabs.forEach(t => t.classList.remove('active'));
         tabContents.forEach(tc => tc.classList.remove('active'));
         tab.classList.add('active');
-        document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
       });
     });
 
@@ -382,15 +370,10 @@ Events taking place/due to take place: </textarea>
     });
     openWebsiteBtn.addEventListener('click', () => {
       if (siteDd.value) {
-        try {
-          const newWindow = window.open(siteDd.value, '_blank');
-          if (!newWindow) {
-            alert('Unable to open website. Pop-ups may be blocked or this feature may not work in preview mode. Please run the app locally or on a hosted page.');
-          }
-        } catch (err) {
-          console.error('Failed to open website:', err);
-          alert('Unable to open website. This feature may not work in preview mode. Please run the app locally or on a hosted page.');
-        }
+        const link = document.createElement('a');
+        link.href = siteDd.value;
+        link.target = '_blank';
+        link.click();
       }
     });
 
@@ -401,15 +384,10 @@ Events taking place/due to take place: </textarea>
     });
     openFileBtn.addEventListener('click', () => {
       if (fileDd.value) {
-        try {
-          const newWindow = window.open(fileDd.value, '_blank');
-          if (!newWindow) {
-            alert('Unable to download file. Pop-ups may be blocked or this feature may not work in preview mode. Please run the app locally or on a hosted page.');
-          }
-        } catch (err) {
-          console.error('Failed to download file:', err);
-          alert('Unable to download file. This feature may not work in preview mode. Please run the app locally or on a hosted page.');
-        }
+        const link = document.createElement('a');
+        link.href = fileDd.value;
+        link.download = '';
+        link.click();
       }
     });
 
@@ -793,53 +771,8 @@ Events taking place/due to take place: </textarea>
       }
     });
 
-    // --------- Open Outlook Logic -----------
-    const openOutlookBtn = document.getElementById('openOutlook');
-    openOutlookBtn.addEventListener('click', () => {
-      try {
-        // Use mailto: to open the default email client (should be Outlook if set as default)
-        const mailtoLink = 'mailto:?subject=Quick%20Email%20from%20First%20Bus%20App';
-        const success = window.location.assign(mailtoLink);
-        if (!success) {
-          throw new Error('Failed to open mailto link');
-        }
-      } catch (err) {
-        console.error('Failed to open Outlook:', err);
-        alert('Unable to open Outlook. This feature may not work in preview mode. Please ensure Outlook is set as your default email client and run the app locally or on a hosted page.');
-      }
-    });
-
-    // --------- Quick Note Logic -----------
-    const toggleQuickNoteBtn = document.getElementById('toggleQuickNote');
-    const quickNoteArea = document.getElementById('quickNoteArea');
-    const quickNoteText = document.getElementById('quickNoteText');
-    let isQuickNoteVisible = false;
-
-    // Load saved note from localStorage on page load
-    const savedNote = localStorage.getItem('quickNote');
-    if (savedNote) {
-      quickNoteText.value = savedNote;
-    }
-
-    toggleQuickNoteBtn.addEventListener('click', () => {
-      isQuickNoteVisible = !isQuickNoteVisible;
-      if (isQuickNoteVisible) {
-        quickNoteArea.style.display = 'block';
-        toggleQuickNoteBtn.textContent = 'Hide Quick Note';
-        quickNoteText.focus();
-      } else {
-        quickNoteArea.style.display = 'none';
-        toggleQuickNoteBtn.textContent = 'Quick Note';
-      }
-    });
-
-    // Save note to localStorage whenever the user types
-    quickNoteText.addEventListener('input', () => {
-      localStorage.setItem('quickNote', quickNoteText.value);
-    });
-
     // --------- Hidden Alarm Feature: Trigger at 18:30 Daily -----------
-    let lastAlarmDate = null; // Track the last date the alarm was triggered
+    let lastAlarmDate = null;
 
     function checkAlarm() {
       const now = new Date();
