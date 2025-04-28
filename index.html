@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-29 21:00 BST -->
+<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-29 22:00 BST -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -983,10 +983,24 @@ Events taking place/due to take place: </textarea>
         });
       }
 
-      // Update notes whenever the route selection changes
+      // Update notes whenever the route selection changes, but don't reset the form
       routeDd.addEventListener('change', () => {
-        resetForm(); // Reset form when route changes
+        // Only clear the textarea and update button state, keep the dropdown selection
+        if (!editingNoteId) { // Don't clear if we're editing a note
+          routeInfoText.value = '';
+          updateSaveButtonState();
+        }
         renderNotes();
+      });
+
+      // Reset the form when switching to the Route Info tab
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          if (tab.dataset.tab === 'route-info') {
+            resetForm();
+            renderNotes();
+          }
+        });
       });
     }
     loadRouteNotes();
