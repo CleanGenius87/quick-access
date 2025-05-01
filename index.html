@@ -1241,6 +1241,43 @@ Events taking place/due to take place: </textarea>
     const uploadErrorDiv = document.getElementById('uploadError');
     const pdfList = document.getElementById('pdfList');
 
+    // Moved loadPdfs outside of initializeNoes to fix the ReferenceError
+    function loadPdfs() {
+      let allPdfs = [];
+
+      database.ref('route-pdfs').on('value', (snapshot) => {
+        const pdfs = snapshot.val();
+        allPdfs = pdfs ? Object.entries(pdfs).map(([id, pdf]) => ({ id, ...pdf })) : [];
+        renderPdfs();
+      });
+
+      function renderPdfs() {
+        const selectedRoute = noesRouteDd.value;
+        pdfList.innerHTML = '';
+
+        const filteredPdfs = selectedRoute
+          ? allPdfs.filter(pdf => pdf.route === selectedRoute)
+          : [];
+
+        if (filteredPdfs.length === 0) {
+          pdfList.innerHTML = '<p>No PDFs available for this route.</p>';
+          return;
+        }
+
+        filteredPdfs.sort((a, b) => b.timestamp - a.timestamp);
+        filteredPdfs.forEach(pdf => {
+          const pdfItem = document.createElement('div');
+          pdfItem.className = 'pdf-item';
+          const date = new Date(pdf.timestamp);
+          pdfItem.innerHTML = `
+            <p><a href="${pdf.url}" target="_blank">${pdf.fileName}</a></p>
+            <p class="timestamp">Uploaded: ${date.toLocaleString()}</p>
+          `;
+          pdfList.appendChild(pdfItem);
+        });
+      }
+    }
+
     function initializeNoes() {
       // Enable/disable upload button based on file selection and route
       pdfUploadInput.addEventListener('change', () => {
@@ -1254,7 +1291,7 @@ Events taking place/due to take place: </textarea>
         loadPdfs(); // Update PDF list when route changes
       });
 
-      // Upload PDF to Firebase Storage with timeout and better error handling
+      // Upload PDF to Firebase Storage without a timeout
       uploadPdfButton.addEventListener('click', () => {
         const file = pdfUploadInput.files[0];
         const route = noesRouteDd.value;
@@ -1268,15 +1305,6 @@ Events taking place/due to take place: </textarea>
         uploadPdfButton.style.background = '#c7b2f7';
         uploadErrorDiv.textContent = '';
 
-        // Set a timeout for the upload (e.g., 30 seconds)
-        const uploadTimeout = setTimeout(() => {
-          uploadTask.cancel(); // Cancel the upload if it takes too long
-          uploadPdfButton.textContent = 'Upload Failed';
-          uploadPdfButton.style.background = '#d70a33';
-          uploadErrorDiv.textContent = 'Upload timed out after 30 seconds. Please check your internet connection and try again.';
-          uploadPdfButton.disabled = false;
-        }, 30000);
-
         uploadTask.on('state_changed',
           (snapshot) => {
             // Optional: Show upload progress
@@ -1284,7 +1312,6 @@ Events taking place/due to take place: </textarea>
             console.log('Upload progress:', progress + '%');
           },
           (error) => {
-            clearTimeout(uploadTimeout); // Clear the timeout on error
             console.error('Error uploading PDF:', error);
             uploadPdfButton.textContent = 'Upload Failed';
             uploadPdfButton.style.background = '#d70a33';
@@ -1292,7 +1319,6 @@ Events taking place/due to take place: </textarea>
             uploadPdfButton.disabled = false;
           },
           () => {
-            clearTimeout(uploadTimeout); // Clear the timeout on success
             // Upload complete, get download URL
             uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
               // Save PDF metadata to Realtime Database
@@ -1321,7 +1347,6 @@ Events taking place/due to take place: </textarea>
                   uploadPdfButton.disabled = false;
                 });
             }).catch(error => {
-              clearTimeout(uploadTimeout);
               console.error('Error getting download URL:', error);
               uploadPdfButton.textContent = 'Upload Failed';
               uploadPdfButton.style.background = '#d70a33';
@@ -1331,43 +1356,6 @@ Events taking place/due to take place: </textarea>
           }
         );
       });
-
-      // Load and display PDFs from Firebase, filtered by selected route
-      function loadPdfs() {
-        let allPdfs = [];
-
-        database.ref('route-pdfs').on('value', (snapshot) => {
-          const pdfs = snapshot.val();
-          allPdfs = pdfs ? Object.entries(pdfs).map(([id, pdf]) => ({ id, ...pdf })) : [];
-          renderPdfs();
-        });
-
-        function renderPdfs() {
-          const selectedRoute = noesRouteDd.value;
-          pdfList.innerHTML = '';
-
-          const filteredPdfs = selectedRoute
-            ? allPdfs.filter(pdf => pdf.route === selectedRoute)
-            : [];
-
-          if (filteredPdfs.length === 0) {
-            pdfList.innerHTML = '<p>No PDFs available for this route.</p>';
-            return;
-          }
-
-          filteredPdfs.sort((a, b) => b.timestamp - a.timestamp);
-          filteredPdfs.forEach(pdf => {
-            const pdfItem = document.createElement('div');
-            pdfItem.className = 'pdf-item';
-            const date = new Date(pdf.timestamp);
-            pdfItem.innerHTML = `
-              <p><a href="${pdf.url}" target="_blank">${pdf.fileName}</a></p>
-              <p class="timestamp">Uploaded: ${date.toLocaleString()}</p>
-            `;
-            pdfList.appendChild(pdfItem);
-          });
-        }
-      }
     }
 
     // --------- Initialize All Features on DOM Load --------
