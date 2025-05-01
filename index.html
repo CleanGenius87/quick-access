@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-29 22:00 BST -->
+<!-- Forcing GitHub Pages redeploy to clear cache: 2025-05-01 12:00 BST -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -8,6 +8,7 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <style>
     body {
       background: #2c0078;
@@ -34,7 +35,7 @@
     .tab-content.active { display: block; }
     .dropdown-section, .duty-form-section { width: 100%; margin-bottom: 24px; }
     label { font-weight: bold; margin-bottom: 8px; display: block; font-size: 1.05rem; color: #2c0078;}
-    select, input[type="text"], input[type="date"], textarea {
+    select, input[type="text"], input[type="date"], input[type="file"], textarea {
       width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
       margin-bottom: 6px; background: #faf7ff; color: #2c0078; font-family: 'Montserrat', Arial, sans-serif;
     }
@@ -68,13 +69,25 @@
     .route-note { border-bottom: 1px solid #d3d3d3; padding: 8px 0; position: relative; }
     .route-note:last-child { border-bottom: none; }
     .route-note p { margin: 4px 0; font-size: 0.95rem; color: #36297d; }
-    .route-note .delete-btn, .route-note .edit-btn {
+    .route-note.noe strong { color: #ff0000; } /* Bright red for NOE */
+    .route-note.tts strong { color: #ffcc00; } /* Darker yellow for TTS */
+    .route-note.general strong { color: #00cc00; } /* Darker green for General */
+    .route-note .delete-btn, .route-note .edit-btn, .route-note .print-btn, .route-note .copy-btn {
       border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.9rem; cursor: pointer;
       position: static; display: inline-block; margin-top: 8px; margin-right: 8px;
     }
     .route-note .delete-btn { background: #ff4444; color: #fff; }
     .route-note .edit-btn { background: #44b261; color: #fff; }
+    .route-note .print-btn { background: #4CAF50; color: #fff; }
+    .route-note .copy-btn { background: #2196F3; color: #fff; }
     .route-note .timestamp { font-size: 0.85rem; color: #666; }
+    .pdf-upload { margin-top: 20px; padding: 10px; background: #ede7fd; border-radius: 6px; }
+    .pdf-upload p { margin: 5px 0; font-size: 1rem; color: #36297d; }
+    .pdf-list { margin-top: 10px; }
+    .pdf-item { border-bottom: 1px solid #d3d3d3; padding: 8px 0; }
+    .pdf-item:last-child { border-bottom: none; }
+    .pdf-item a { color: #ff44d0; text-decoration: none; }
+    .pdf-item a:hover { text-decoration: underline; }
     @media (max-width: 600px) {
       .container {padding: 12px 2vw; max-width: 100vw;}
       .logo {width: 48vw; max-width: 225px;}
@@ -83,7 +96,7 @@
       .handover-content textarea { height: 300px; font-size: 0.9rem; }
       textarea { height: 80px; }
       .route-note p { font-size: 0.9rem; }
-      .route-note .delete-btn, .route-note .edit-btn { padding: 3px 6px; font-size: 0.85rem; }
+      .route-note .delete-btn, .route-note .edit-btn, .route-note .print-btn, .route-note .copy-btn { padding: 3px 6px; font-size: 0.85rem; }
     }
   </style>
 </head>
@@ -96,6 +109,7 @@
       <div class="tab" data-tab="toilet">Toilet Codes</div>
       <div class="tab" data-tab="handover">Midnight Handover</div>
       <div class="tab" data-tab="route-info">Route Info</div>
+      <div class="tab" data-tab="noes">NOE'S</div>
     </div>
     <!-- Tab 1: Quick Access -->
     <div class="tab-content active" id="tab-access">
@@ -403,6 +417,15 @@ Events taking place/due to take place: </textarea>
         </select>
       </div>
       <div class="dropdown-section">
+        <label for="incidentTypeDropdown">Incident Type</label>
+        <select id="incidentTypeDropdown">
+          <option value="">Select incident type…</option>
+          <option value="NOE">NOE</option>
+          <option value="TTS">TTS</option>
+          <option value="General">General</option>
+        </select>
+      </div>
+      <div class="dropdown-section">
         <label for="routeInfo">Route Information (e.g., diversions, roadworks)</label>
         <textarea id="routeInfo" placeholder="Enter information about the route…"></textarea>
       </div>
@@ -412,6 +435,56 @@ Events taking place/due to take place: </textarea>
       <div id="routeNotesDisplay" class="route-notes">
         <h3>Saved Route Notes</h3>
         <div id="routeNotesList"></div>
+      </div>
+    </div>
+
+    <!-- Tab 6: NOE'S -->
+    <div class="tab-content" id="tab-noes">
+      <div class="dropdown-section">
+        <label for="noesRouteDropdown">Select Route</label>
+        <select id="noesRouteDropdown">
+          <option value="">Select a route…</option>
+          <option value="33">33</option>
+          <option value="65">65</option>
+          <option value="71">71</option>
+          <option value="85">85</option>
+          <option value="105">105</option>
+          <option value="110">110</option>
+          <option value="116">116</option>
+          <option value="117">117</option>
+          <option value="203">203</option>
+          <option value="216">216</option>
+          <option value="235">235</option>
+          <option value="281">281</option>
+          <option value="290">290</option>
+          <option value="293">293</option>
+          <option value="371">371</option>
+          <option value="406">406</option>
+          <option value="411">411</option>
+          <option value="418">418</option>
+          <option value="419">419</option>
+          <option value="423">423</option>
+          <option value="467">467</option>
+          <option value="H22">H22</option>
+          <option value="H37">H37</option>
+          <option value="H98">H98</option>
+          <option value="K1">K1</option>
+          <option value="K2">K2</option>
+          <option value="K3">K3</option>
+          <option value="K4">K4</option>
+          <option value="K5">K5</option>
+        </select>
+      </div>
+      <div class="dropdown-section">
+        <label for="pdfUpload">Upload PDF for Route</label>
+        <input type="file" id="pdfUpload" accept="application/pdf">
+        <div class="actions">
+          <button id="uploadPdfButton" disabled>Upload PDF</button>
+        </div>
+      </div>
+      <div id="pdfListDisplay" class="pdf-upload">
+        <h3>Uploaded PDFs</h3>
+        <div id="pdfList"></div>
       </div>
     </div>
 
@@ -427,12 +500,13 @@ Events taking place/due to take place: </textarea>
       authDomain: "quick-access-4ecd5.firebaseapp.com",
       databaseURL: "https://quick-access-4ecd5-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "quick-access-4ecd5",
-      storageBucket: "quick-access-4ecd5.firebasestorage.app",
+      storageBucket: "quick-access-4ecd5.appspot.com",
       messagingSenderId: "666068072894",
       appId: "1:666068072894:web:5b25db2dcd137bdb5c61ef"
     };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+    const storage = firebase.storage();
 
     // ---------------- Tab UI Logic ----------------
     const tabs = document.querySelectorAll('.tab');
@@ -447,6 +521,10 @@ Events taking place/due to take place: </textarea>
         // When switching to Duty Roster tab, set date to current day
         if (tab.dataset.tab === 'roster') {
           setCurrentDate();
+        }
+        // When switching to NOE'S tab, load PDFs
+        if (tab.dataset.tab === 'noes') {
+          loadPdfs();
         }
       });
     });
@@ -552,16 +630,34 @@ Events taking place/due to take place: </textarea>
       }
     }
 
-    // ---- Show Entries for Date (Calls loadEntries) ----
+    // ---- Show Entries for Date (Calls loadEntries) with Deduplication ----
     async function showEntriesForDate(dateStr) {
       const list = document.getElementById('dutyList');
-      list.innerHTML = '';
+      list.innerHTML = ''; // Clear the list to avoid duplicates
       const entries = await loadEntries(dateStr);
+      
       if (entries.length === 0) {
         list.innerHTML = '<li>No duties recorded for this date.</li>';
       } else {
+        // Deduplicate entries by name (keep the last entry for each person)
+        const uniqueEntries = [];
+        const seenNames = new Set();
+        
+        // Sort entries by name first, then reverse iterate to keep the last entry for each name
         entries.sort((a, b) => a.name.localeCompare(b.name));
-        entries.forEach(e => {
+        for (let i = entries.length - 1; i >= 0; i--) {
+          const entry = entries[i];
+          if (!seenNames.has(entry.name)) {
+            seenNames.add(entry.name);
+            uniqueEntries.push(entry);
+          }
+        }
+        
+        // Sort again for display (alphabetically by name)
+        uniqueEntries.sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Display the deduplicated entries
+        uniqueEntries.forEach(e => {
           const li = document.createElement('li');
           li.textContent = `${e.name}: ${e.duty}`;
           list.appendChild(li);
@@ -708,8 +804,9 @@ Events taking place/due to take place: </textarea>
       `;
       document.getElementById('bulkDutyTable').innerHTML = tableHtml;
 
-      // Save duties
+      // Save duties with duplicate submission prevention
       document.getElementById('saveDuties').onclick = async function() {
+        const saveButton = this;
         let name = document.getElementById('bulk-name').value.trim();
         if (!name) {
           alert('Please enter your name.');
@@ -727,6 +824,11 @@ Events taking place/due to take place: </textarea>
           alert("No duties entered. Please fill at least one!");
           return;
         }
+
+        // Disable the save button to prevent multiple submissions
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
+        saveButton.style.background = "#c7b2f7";
 
         let submitStatus = document.getElementById('submitStatus');
         submitStatus.textContent = "Submitting to rota sheet…";
@@ -748,13 +850,21 @@ Events taking place/due to take place: </textarea>
             console.error('Error submitting duty:', error);
             submitStatus.textContent = "❌ Error saving to rota sheet.";
             submitStatus.style.color = "#d70a33";
+            saveButton.disabled = false;
+            saveButton.textContent = "Save All Duties";
+            saveButton.style.background = "#ff44d0";
             return;
           }
         }
         if (successCount === newEntries.length) {
           submitStatus.textContent = "✅ Rota duties saved to rota sheet!";
           submitStatus.style.color = "#44b261";
-          setTimeout(() => { document.getElementById('bulkDutyFormArea').innerHTML = ''; }, 1200);
+          setTimeout(() => {
+            document.getElementById('bulkDutyFormArea').innerHTML = '';
+            saveButton.disabled = false;
+            saveButton.textContent = "Save All Duties";
+            saveButton.style.background = "#ff44d0";
+          }, 1200);
           let currView = document.getElementById('view-date').value;
           if (currView && newEntries.some(en => en.date === currView)) {
             showEntriesForDate(currView);
@@ -762,6 +872,9 @@ Events taking place/due to take place: </textarea>
         } else {
           submitStatus.textContent = "❌ Some duties failed to save.";
           submitStatus.style.color = "#d70a33";
+          saveButton.disabled = false;
+          saveButton.textContent = "Save All Duties";
+          saveButton.style.background = "#ff44d0";
         }
       };
     }
@@ -864,6 +977,7 @@ Events taking place/due to take place: </textarea>
 
     // --------- Route Info Logic -----------
     const routeDd = document.getElementById('routeDropdown');
+    const incidentTypeDd = document.getElementById('incidentTypeDropdown');
     const routeInfoText = document.getElementById('routeInfo');
     const saveRouteNoteBtn = document.getElementById('saveRouteNote');
     const routeNotesList = document.getElementById('routeNotesList');
@@ -871,19 +985,22 @@ Events taking place/due to take place: </textarea>
 
     // Enable/disable Save button based on input
     function updateSaveButtonState() {
-      saveRouteNoteBtn.disabled = !(routeDd.value && routeInfoText.value.trim());
+      saveRouteNoteBtn.disabled = !(routeDd.value && incidentTypeDd.value && routeInfoText.value.trim());
     }
     routeDd.addEventListener('change', updateSaveButtonState);
+    incidentTypeDd.addEventListener('change', updateSaveButtonState);
     routeInfoText.addEventListener('input', updateSaveButtonState);
 
     // Save or update a note to Firebase
     saveRouteNoteBtn.addEventListener('click', () => {
       const route = routeDd.value;
+      const incidentType = incidentTypeDd.value;
       const info = routeInfoText.value.trim();
-      if (!route || !info) return;
+      if (!route || !incidentType || !info) return;
 
       const note = {
         route: route,
+        incidentType: incidentType,
         info: info,
         timestamp: Date.now()
       };
@@ -915,7 +1032,8 @@ Events taking place/due to take place: </textarea>
 
     function resetForm() {
       editingNoteId = null;
-      routeDd.value = '';
+      // Do not reset routeDd.value to keep the route selected
+      incidentTypeDd.value = '';
       routeInfoText.value = '';
       saveRouteNoteBtn.disabled = true;
       saveRouteNoteBtn.textContent = 'Save Note';
@@ -952,20 +1070,78 @@ Events taking place/due to take place: </textarea>
         filteredNotes.sort((a, b) => b.timestamp - a.timestamp);
         filteredNotes.forEach(note => {
           const noteDiv = document.createElement('div');
-          noteDiv.className = 'route-note';
+          // Safeguard for missing incidentType
+          const incidentClass = note.incidentType ? note.incidentType.toLowerCase() : 'general';
+          noteDiv.className = `route-note ${incidentClass}`;
           const date = new Date(note.timestamp);
           noteDiv.innerHTML = `
-            <p><strong>Route ${note.route}:</strong> ${note.info}</p>
+            <p><strong>Route ${note.route} (${note.incidentType || 'General'}):</strong> ${note.info}</p>
             <p class="timestamp">Posted: ${date.toLocaleString()}</p>
+            <button class="print-btn" data-id="${note.id}">Print</button>
+            <button class="copy-btn" data-id="${note.id}">Copy</button>
             <button class="edit-btn" data-id="${note.id}">Edit</button>
             <button class="delete-btn" data-id="${note.id}">Delete</button>
           `;
           routeNotesList.appendChild(noteDiv);
 
+          // Add print functionality
+          noteDiv.querySelector('.print-btn').addEventListener('click', () => {
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+              <html>
+                <head>
+                  <title>Print Route Note</title>
+                  <style>
+                    body { font-family: 'Montserrat', Arial, sans-serif; padding: 20px; }
+                    h3 { color: #2c0078; }
+                    p { color: #36297d; }
+                    .timestamp { color: #666; font-size: 0.9em; }
+                  </style>
+                </head>
+                <body>
+                  <h3>Route ${note.route} (${note.incidentType || 'General'})</h3>
+                  <p>${note.info}</p>
+                  <p class="timestamp">Posted: ${date.toLocaleString()}</p>
+                </body>
+              </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+          });
+
+          // Add copy functionality using document.execCommand
+          noteDiv.querySelector('.copy-btn').addEventListener('click', () => {
+            const textToCopy = `Route ${note.route} (${note.incidentType || 'General'}): ${note.info}\nPosted: ${date.toLocaleString()}`;
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = textToCopy;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            try {
+              document.execCommand('copy');
+              const copyBtn = noteDiv.querySelector('.copy-btn');
+              copyBtn.textContent = 'Copied!';
+              copyBtn.style.background = '#44b261';
+              setTimeout(() => {
+                copyBtn.textContent = 'Copy';
+                copyBtn.style.background = '#2196F3';
+              }, 2000);
+            } catch (err) {
+              console.error('Failed to copy text: ', err);
+              const copyBtn = noteDiv.querySelector('.copy-btn');
+              copyBtn.textContent = 'Copy Failed';
+              copyBtn.style.background = '#d70a33';
+            } finally {
+              document.body.removeChild(tempTextarea);
+            }
+          });
+
           // Add edit functionality
           noteDiv.querySelector('.edit-btn').addEventListener('click', () => {
             editingNoteId = note.id;
-            routeDd.value = note.route;
+            // Do not change routeDd.value since it should stay selected
+            incidentTypeDd.value = note.incidentType || 'General';
             routeInfoText.value = note.info;
             saveRouteNoteBtn.textContent = 'Update Note';
             saveRouteNoteBtn.style.background = '#44b261';
@@ -985,25 +1161,139 @@ Events taking place/due to take place: </textarea>
 
       // Update notes whenever the route selection changes, but don't reset the form
       routeDd.addEventListener('change', () => {
-        // Only clear the textarea and update button state, keep the dropdown selection
-        if (!editingNoteId) { // Don't clear if we're editing a note
+        // Only clear the textarea and incident type if not editing a note
+        if (!editingNoteId) {
+          incidentTypeDd.value = '';
           routeInfoText.value = '';
           updateSaveButtonState();
         }
         renderNotes();
       });
 
-      // Reset the form when switching to the Route Info tab
+      // Reset the form (except route dropdown) when switching to the Route Info tab
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
           if (tab.dataset.tab === 'route-info') {
-            resetForm();
+            editingNoteId = null;
+            incidentTypeDd.value = '';
+            routeInfoText.value = '';
+            saveRouteNoteBtn.disabled = true;
+            saveRouteNoteBtn.textContent = 'Save Note';
+            saveRouteNoteBtn.style.background = '#ff44d0';
             renderNotes();
           }
         });
       });
     }
     loadRouteNotes();
+
+    // --------- NOE'S Tab: PDF Upload Logic -----------
+    const noesRouteDd = document.getElementById('noesRouteDropdown');
+    const pdfUploadInput = document.getElementById('pdfUpload');
+    const uploadPdfButton = document.getElementById('uploadPdfButton');
+    const pdfList = document.getElementById('pdfList');
+
+    // Enable/disable upload button based on file selection and route
+    pdfUploadInput.addEventListener('change', () => {
+      uploadPdfButton.disabled = !pdfUploadInput.files.length || !noesRouteDd.value;
+    });
+
+    noesRouteDd.addEventListener('change', () => {
+      uploadPdfButton.disabled = !pdfUploadInput.files.length || !noesRouteDd.value;
+      loadPdfs(); // Update PDF list when route changes
+    });
+
+    // Upload PDF to Firebase Storage
+    uploadPdfButton.addEventListener('click', () => {
+      const file = pdfUploadInput.files[0];
+      const route = noesRouteDd.value;
+      if (!file || !route) return;
+
+      const storageRef = storage.ref(`route-pdfs/${route}/${file.name}`);
+      const uploadTask = storageRef.put(file);
+
+      uploadPdfButton.disabled = true;
+      uploadPdfButton.textContent = 'Uploading...';
+      uploadPdfButton.style.background = '#c7b2f7';
+
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          // Optional: Show upload progress
+        },
+        (error) => {
+          console.error('Error uploading PDF:', error);
+          uploadPdfButton.textContent = 'Upload Failed';
+          uploadPdfButton.style.background = '#d70a33';
+          uploadPdfButton.disabled = false;
+        },
+        () => {
+          // Upload complete, get download URL
+          uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+            // Save PDF metadata to Realtime Database
+            const pdfData = {
+              route: route,
+              fileName: file.name,
+              url: downloadURL,
+              timestamp: Date.now()
+            };
+            database.ref('route-pdfs').push(pdfData)
+              .then(() => {
+                uploadPdfButton.textContent = 'Uploaded!';
+                uploadPdfButton.style.background = '#44b261';
+                pdfUploadInput.value = ''; // Clear the file input
+                setTimeout(() => {
+                  uploadPdfButton.textContent = 'Upload PDF';
+                  uploadPdfButton.style.background = '#ff44d0';
+                  uploadPdfButton.disabled = false;
+                }, 2000);
+              })
+              .catch(error => {
+                console.error('Error saving PDF metadata:', error);
+                uploadPdfButton.textContent = 'Upload Failed';
+                uploadPdfButton.style.background = '#d70a33';
+                uploadPdfButton.disabled = false;
+              });
+          });
+        }
+      );
+    });
+
+    // Load and display PDFs from Firebase, filtered by selected route
+    function loadPdfs() {
+      let allPdfs = [];
+
+      database.ref('route-pdfs').on('value', (snapshot) => {
+        const pdfs = snapshot.val();
+        allPdfs = pdfs ? Object.entries(pdfs).map(([id, pdf]) => ({ id, ...pdf })) : [];
+        renderPdfs();
+      });
+
+      function renderPdfs() {
+        const selectedRoute = noesRouteDd.value;
+        pdfList.innerHTML = '';
+
+        const filteredPdfs = selectedRoute
+          ? allPdfs.filter(pdf => pdf.route === selectedRoute)
+          : [];
+
+        if (filteredPdfs.length === 0) {
+          pdfList.innerHTML = '<p>No PDFs available for this route.</p>';
+          return;
+        }
+
+        filteredPdfs.sort((a, b) => b.timestamp - a.timestamp);
+        filteredPdfs.forEach(pdf => {
+          const pdfItem = document.createElement('div');
+          pdfItem.className = 'pdf-item';
+          const date = new Date(pdf.timestamp);
+          pdfItem.innerHTML = `
+            <p><a href="${pdf.url}" target="_blank">${pdf.fileName}</a></p>
+            <p class="timestamp">Uploaded: ${date.toLocaleString()}</p>
+          `;
+          pdfList.appendChild(pdfItem);
+        });
+      }
+    }
 
     // --------- Hidden Alarm Feature: Trigger at 18:30 Daily -----------
     let lastAlarmDate = null;
@@ -1027,5 +1317,5 @@ Events taking place/due to take place: </textarea>
     // Run the check immediately in case the app is opened exactly at 18:30
     checkAlarm();
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'936ff448cb61bff2',t:'MTc0NTc3NDA0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
