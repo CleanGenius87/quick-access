@@ -552,11 +552,28 @@ Events taking place/due to take place: </textarea>
       }
     }
 
+    // ---- Helper to Remove Duplicates ----
+    function removeDuplicateEntries(entries) {
+      const seen = new Set();
+      return entries.filter(entry => {
+        const key = `${entry.name}:${entry.date}:${entry.duty}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          return true;
+        }
+        return false;
+      });
+    }
+
     // ---- Show Entries for Date (Calls loadEntries) ----
     async function showEntriesForDate(dateStr) {
       const list = document.getElementById('dutyList');
       list.innerHTML = '';
-      const entries = await loadEntries(dateStr);
+      let entries = await loadEntries(dateStr);
+      
+      // Remove duplicates
+      entries = removeDuplicateEntries(entries);
+
       if (entries.length === 0) {
         list.innerHTML = '<li>No duties recorded for this date.</li>';
       } else {
@@ -661,7 +678,7 @@ Events taking place/due to take place: </textarea>
       };
     }
 
-    function updateBulkDutyTable(monthValue) {
+    async function updateBulkDutyTable(monthValue) {
       if (!monthValue) {
         document.getElementById('bulkDutyTable').innerHTML = '<p>Please select a month.</p>';
         return;
@@ -681,6 +698,14 @@ Events taking place/due to take place: </textarea>
           display: dateToDisplay(d)
         });
       }
+
+      // Fetch existing duties for the entire month to prevent duplicates
+      let existingEntries = [];
+      for (const day of days) {
+        const entries = await loadEntries(day.date);
+        existingEntries = existingEntries.concat(entries);
+      }
+      existingEntries = removeDuplicateEntries(existingEntries);
 
       // Build the table
       let tableHtml = `
@@ -720,11 +745,17 @@ Events taking place/due to take place: </textarea>
           let dutySel = document.getElementById('bulk-duty-' + i);
           let duty = dutySel.value;
           if (duty) {
-            newEntries.push({ name, date: days[i].date, duty });
+            // Check if this entry already exists
+            const entryExists = existingEntries.some(
+              entry => entry.name === name && entry.date === days[i].date && entry.duty === duty
+            );
+            if (!entryExists) {
+              newEntries.push({ name, date: days[i].date, duty });
+            }
           }
         }
         if (newEntries.length === 0) {
-          alert("No duties entered. Please fill at least one!");
+          alert("No new duties to save. All entered duties already exist or no duties were entered.");
           return;
         }
 
@@ -744,6 +775,8 @@ Events taking place/due to take place: </textarea>
               mode: 'no-cors'
             });
             successCount++;
+            // Add to existingEntries to prevent future duplicates
+            existingEntries.push(entry);
           } catch (error) {
             console.error('Error submitting duty:', error);
             submitStatus.textContent = "❌ Error saving to rota sheet.";
@@ -1027,5 +1060,5 @@ Events taking place/due to take place: </textarea>
     // Run the check immediately in case the app is opened exactly at 18:30
     checkAlarm();
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'936ff448cb61bff2',t:'MTc0NTc3NDA0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
