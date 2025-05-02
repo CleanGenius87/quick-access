@@ -5,11 +5,9 @@
   <meta charset="UTF-8">
   <title>First Bus Quick Access & Duty Roster</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK (still needed for Route Info tab) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <!-- SheetJS Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
       background: #2c0078;
@@ -110,6 +108,9 @@
     .rota-table tr:hover {
       background: #e6e2f9;
     }
+    .rest-day {
+      background-color: #ffe6e6;
+    }
     @media (max-width: 600px) {
       .container {padding: 12px 2vw; max-width: 100vw;}
       .logo {width: 48vw; max-width: 225px;}
@@ -174,9 +175,16 @@
     <!-- Tab 2: Rota -->
     <div class="tab-content active" id="tab-roster">
       <div class="dropdown-section">
+        <label for="weekSelector">Select Week</label>
+        <select id="weekSelector">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+      <div class="dropdown-section">
         <label for="controllerSelect">Filter by Controller</label>
         <select id="controllerSelect">
           <option value="">All Controllers</option>
+          <!-- Populated dynamically -->
         </select>
       </div>
       <div class="rota-table-container">
@@ -412,7 +420,7 @@ Events taking place/due to take place: </textarea>
           <option value="110">110</option>
           <option value="116">116</option>
           <option value="117">117</option>
-           <option value="203">203</option>
+          <option value="203">203</option>
           <option value="216">216</option>
           <option value="235">235</option>
           <option value="281">281</option>
@@ -456,7 +464,7 @@ Events taking place/due to take place: </textarea>
   <script>
     // Wait for DOM to be fully loaded
     document.addEventListener('DOMContentLoaded', function() {
-      // ---------------- Firebase Initialization ----------------
+      // ---------------- Firebase Initialization (for Route Info) ----------------
       const firebaseConfig = {
         apiKey: "AIzaSyDdFpRnDajt4QGWXkkliyS5fbxwmF_uGTI",
         authDomain: "quick-access-4ecd5.firebaseapp.com",
@@ -475,31 +483,6 @@ Events taking place/due to take place: </textarea>
         return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
       }
 
-      // Parse dates like "SAT 26TH April" to Date objects
-      function parseExcelDate(dateStr, assumedYear = 2025) {
-        if (!dateStr || typeof dateStr !== 'string') return null;
-        const parts = dateStr.split(' ');
-        if (parts.length < 3) return null;
-        const dayStr = parts[1].replace(/TH|ST|ND|RD/, '');
-        const monthStr = parts[2];
-        const monthNames = {
-          'January': 0, 'February': 1, 'March': 2, 'April': 3, 'May': 4, 'June': 5,
-          'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
-        };
-        const month = monthNames[monthStr];
-        if (month === undefined || !dayStr) return null;
-        const day = parseInt(dayStr, 10);
-        return new Date(assumedYear, month, day);
-      }
-
-      // Format date for display: "26TH April"
-      function formatDateForHeader(dateStr) {
-        if (!dateStr || typeof dateStr !== 'string') return 'Unknown';
-        const parts = dateStr.split(' ');
-        if (parts.length < 3) return dateStr;
-        return `${parts[1]} ${parts[2]}`;
-      }
-
       // ---------------- Tab UI Logic ----------------
       const tabs = document.querySelectorAll('.tab');
       const tabContents = document.querySelectorAll('.tab-content');
@@ -510,7 +493,9 @@ Events taking place/due to take place: </textarea>
           tab.classList.add('active');
           document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
           if (tab.dataset.tab === 'roster') {
-            loadRotaData();
+            populateWeekSelector();
+            populateControllerDropdown();
+            displayRota();
           }
         });
       });
@@ -547,432 +532,263 @@ Events taking place/due to take place: </textarea>
       // --------- Rota Logic -----------
       const rotaTable = document.getElementById('rotaTable');
       const controllerSelect = document.getElementById('controllerSelect');
+      const weekSelector = document.getElementById('weekSelector');
 
-      async function loadRotaData() {
-        if (!rotaTable || !controllerSelect) {
-          console.error('Rota table or controller select element not found.');
-          return;
-        }
-
-        rotaTable.innerHTML = '<p>Loading rota data...</p>';
-        try {
-          const response = await fetch('files/New Rota.xlsx');
-          if (!response.ok) {
-            throw new Error(`Failed to fetch rota file: ${response.status} ${response.statusText}`);
-          }
-
-          const arrayBuffer = await response.arrayBuffer();
-          const workbook = XLSX.read(arrayBuffer, { type: 'array', raw: true });
-
-          const sheetNames = workbook.SheetNames;
-          console.log('Available sheets:', sheetNames);
-          const currentSheet = selectCurrentWeekSheet(sheetNames);
-          if (!currentSheet) {
-            throw new Error('No sheet found for the current week.');
-          }
-          console.log('Selected sheet:', currentSheet);
-
-          const sheet = workbook.Sheets[currentSheet];
-          const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, blankrows: false });
-          console.log('Raw data:', rawData);
-
-          if (!rawData || rawData.length < 2) {
-            throw new Error('Excel sheet is empty or does not contain enough rows.');
-          }
-
-          displayRota(rawData);
-          populateControllerDropdown(rawData);
-        } catch (err) {
-          console.error('Error loading rota data:', err);
-          rotaTable.innerHTML = `<p style="color: #d70a33;">Error: Unable to load rota data. ${err.message}</p>`;
-        }
-      }
-
-      function selectCurrentWeekSheet(sheetNames) {
-        const today = new Date(2025, 4, 2);
-        let selectedSheet = null;
-
-        sheetNames.forEach(sheetName => {
-          const match = sheetName.match(/WC (\d{2})\.(\d{2})\.(\d{2})/);
-          if (match) {
-            const day = parseInt(match[1], 10);
-            const month = parseInt(match[2], 10) - 1;
-            const year = 2000 + parseInt(match[3], 10);
-            const monday = new Date(year, month, day);
-            const sunday = new Date(monday);
-            sunday.setDate(monday.getDate() + 6);
-
-            if (today >= monday && today <= sunday) {
-              selectedSheet = sheetName;
-            }
-          }
-        });
-
-        if (!selectedSheet) {
-          let latestDate = null;
-          sheetNames.forEach(sheetName => {
-            const match = sheetName.match(/WC (\d{2})\.(\d{2})\.(\d{2})/);
-            if (match) {
-              const day = parseInt(match[1], 10);
-              const month = parseInt(match[2], 10) - 1;
-              const year = 2000 + parseInt(match[3], 10);
-              const sheetDate = new Date(year, month, day);
-
-              if (!latestDate || sheetDate > latestDate) {
-                latestDate = sheetDate;
-                selectedSheet = sheetName;
-              }
-            }
-          });
-        }
-
-        return selectedSheet;
-      }
-
-      function extractDutyCode(value) {
-        if (value === undefined || value === null || value === '') return '-';
-        if (typeof value !== 'string') value = String(value);
-        const parts = value.trim().split(' ');
-        return parts[0] || '-';
-      }
-
-      function populateControllerDropdown(rawData) {
-        const controllers = new Set();
-        for (let i = 1; i < rawData.length; i++) {
-          const row = rawData[i];
-          if (!row || row.length < 5) continue;
-          const controller = row[4]; // Column E (index 4)
-          if (controller && typeof controller === 'string' && controller.trim() !== '') {
-            controllers.add(controller.trim());
-          }
-        }
-        console.log('Controllers found:', controllers);
-        controllerSelect.innerHTML = '<option value="">All Controllers</option>';
-        controllers.forEach(controller => {
-          const option = document.createElement('option');
-          option.value = controller;
-          option.textContent = controller;
-          controllerSelect.appendChild(option);
-        });
-        controllerSelect.addEventListener('change', () => displayRota(rawData));
-      }
-
-      function displayRota(rawData) {
-        if (!rotaTable) {
-          console.error('Rota table element not found.');
-          return;
-        }
-
-        const table = document.createElement('table');
-        table.className = 'rota-table';
-
-        // Extract dynamic headers from Row 1 (indices 5 to 11)
-        const dateRow = rawData[0] || [];
-        console.log('Header row (dates):', dateRow);
-        const dates = [];
-        for (let i = 5; i <= 11; i++) {
-          dates.push(dateRow[i] || 'Unknown');
-        }
-
-        // Parse dates for highlighting the current date
-        const parsedDates = dates.map(dateStr => parseExcelDate(dateStr, 2025));
-        const today = new Date(2025, 4, 2);
-        const todayStr = getDateYYYYMMDD(today);
-
-        // Create headers
-        const headerRow = document.createElement('tr');
-        const headers = ['Duty', ...dates.map(formatDateForHeader)];
-        headers.forEach((headerText, index) => {
-          const th = document.createElement('th');
-          th.textContent = headerText;
-          if (index > 0) {
-            const dateIndex = index - 1;
-            const date = parsedDates[dateIndex];
-            if (date && getDateYYYYMMDD(date) === todayStr) {
-              th.classList.add('current-date');
-            }
-          }
-          headerRow.appendChild(th);
-        });
-        table.appendChild(headerRow);
-
-        // Process data starting from row 1 (index 1)
-        let dataRows = [];
-        for (let i = 1; i < rawData.length; i++) {
-          const row = rawData[i];
-          if (!row || row.length < 5) continue;
-
-          const controller = row[4] ? String(row[4]).trim() : '-'; // Column E (index 4)
-          if (controller === '-') continue;
-
-          // Extract duties from Columns F to L (indices 5 to 11)
-          const sat = extractDutyCode(row[5]);
-          const sun = extractDutyCode(row[6]);
-          const mon = extractDutyCode(row[7]);
-          const tue = extractDutyCode(row[8]);
-          const wed = extractDutyCode(row[9]);
-          const thu = extractDutyCode(row[10]);
-          const fri = extractDutyCode(row[11]);
-
-          console.log(`Row ${i}: Controller=${controller}, Duties=[${sat}, ${sun}, ${mon}, ${tue}, ${wed}, ${thu}, ${fri}]`);
-
-          dataRows.push({ duty: controller, sat, sun, mon, tue, wed, thu, fri, controller });
-        }
-
-        // Filter by selected controller
-        const selectedController = controllerSelect.value;
-        let filteredRows = selectedController ? dataRows.filter(row => row.controller === selectedController) : dataRows;
-
-        // Display the filtered rows
-        filteredRows.forEach(row => {
-          const tr = document.createElement('tr');
-          // Only include the duty (controller name) and the 7 duty columns
-          [row.duty, row.sat, row.sun, row.mon, row.tue, row.wed, row.thu, row.fri].forEach(cellData => {
-            const td = document.createElement('td');
-            td.textContent = cellData;
-            tr.appendChild(td);
-          });
-          table.appendChild(tr);
-        });
-
-        rotaTable.innerHTML = '';
-        if (filteredRows.length === 0) {
-          rotaTable.innerHTML = '<p>No rota data available for the selected controller.</p>';
-        } else {
-          rotaTable.appendChild(table);
-        }
-      }
-
-      // --------- Toilet Codes Logic -----------
-      const toiletCodesData = [
-        { location: "Acton Green", mainDoor: "7469", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Atkins Road", mainDoor: "5+4 2 1", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Belmont", mainDoor: "5603", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Bessborough Rd./Alton Rd.", mainDoor: "C8046X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Brentford County Court", mainDoor: "235", gents: "", ladies: "C1953X", keyLockBox: "" },
-        { location: "Brook Street", mainDoor: "5617", gents: "", ladies: "", keyLockBox: "Temporary toilet code: C1234Z" },
-        { location: "Cane Hill", mainDoor: "C4590X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Camberwell", mainDoor: "1403", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Chessington WOA", mainDoor: "", gents: "C1652Z", ladies: "C8925X", keyLockBox: "" },
-        { location: "Chiswick Business Park", mainDoor: "1+5 4", gents: "", ladies: "2314", keyLockBox: "" },
-        { location: "Clapham Junction", mainDoor: "2+4 1+5 3", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Cromwell Road", mainDoor: "B83790", gents: "4+2, 5, 3", ladies: "2+3, 4, 1", keyLockBox: "" },
-        { location: "East Acton, Telford Way", mainDoor: "", gents: "2471", ladies: "2947", keyLockBox: "" },
-        { location: "Ealing Taxi/Bus Stand", mainDoor: "5116", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Fairfield Bus Station", mainDoor: "5+3, 2, 1", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Fulwell Stanley Road", mainDoor: "1702", gents: "1702", ladies: "C6740Z", keyLockBox: "" },
-        { location: "Great West Quarter", mainDoor: "1+5, 1", gents: "", ladies: "1+2, 4, 3", keyLockBox: "" },
-        { location: "Ham", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Hammersmith Lower", mainDoor: "2+3, 5, 4, 1", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Harrow Bus Station", mainDoor: "C1209X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Kingston - Millennium House", mainDoor: "C1987", gents: "", ladies: "1987", keyLockBox: "" },
-        { location: "Lonsdale Road", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Manor Road", mainDoor: "1468Y", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Mitcham Fair Green", mainDoor: "", gents: "5+2 1 4", ladies: "", keyLockBox: "" },
-        { location: "Morden", mainDoor: "C3490X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Park Royal ASDA", mainDoor: "1048 / 1987", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Pollards Hill", mainDoor: "1203", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Putney Bridge", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Richmond Bus Station", mainDoor: "1+2, 3+5, 4", gents: "2512", ladies: "6113", keyLockBox: "Temp Toilet C3470" },
-        { location: "Roehampton Bus Station", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Southgate Toilet", mainDoor: "", gents: "", ladies: "C2581Y", keyLockBox: "" },
-        { location: "Staines Elmsleigh Centre", mainDoor: "7532", gents: "1473", ladies: "1473", keyLockBox: "Back door code 2704 driver give code on 25/03/2024" },
-        { location: "Sutton Hospital", mainDoor: "2+5 1", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Tolworth (Toby Way)", mainDoor: "C3460X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Tolworth Travel Lodge", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Tottenham Hale Bus Station Cabin", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Turnpike Lane", mainDoor: "2351X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Twickenham Albany", mainDoor: "", gents: "6912", ladies: "5831", keyLockBox: "" },
-        { location: "Wakefield Road", mainDoor: "", gents: "", ladies: "8205", keyLockBox: "" },
-        { location: "Waitrose Twickenham", mainDoor: "60369X", gents: "", ladies: "", keyLockBox: "" },
-        { location: "Wallington", mainDoor: "2 5+3", gents: "", ladies: "2703", keyLockBox: "" }
-      ];
-
-      const toiletLocationDd = document.getElementById('toiletLocationDropdown');
-      const showToiletCodesBtn = document.getElementById('showToiletCodes');
-      const toiletCodesDisplay = document.getElementById('toiletCodesDisplay');
-
-      toiletLocationDd.addEventListener('change', () => {
-        showToiletCodesBtn.disabled = !toiletLocationDd.value;
-        toiletCodesDisplay.style.display = 'none';
-      });
-
-      showToiletCodesBtn.addEventListener('click', () => {
-        const selectedLocation = toiletLocationDd.value;
-        if (!selectedLocation) return;
-
-        const locationData = toiletCodesData.find(item => item.location === selectedLocation);
-        if (!locationData) {
-          toiletCodesDisplay.innerHTML = '<p>No codes available for this location.</p>';
-          toiletCodesDisplay.style.display = 'block';
-          return;
-        }
-
-        let html = '';
-        if (locationData.mainDoor) html += `<p><strong>Main Door:</strong> ${locationData.mainDoor}</p>`;
-        if (locationData.gents) html += `<p><strong>Gents:</strong> ${locationData.gents}</p>`;
-        if (locationData.ladies) html += `<p><strong>Ladies:</strong> ${locationData.ladies}</p>`;
-        if (locationData.keyLockBox) html += `<p><strong>Key Lock Box:</strong> ${locationData.keyLockBox}</p>`;
-
-        toiletCodesDisplay.innerHTML = html || '<p>No codes available for this location.</p>';
-        toiletCodesDisplay.style.display = 'block';
-      });
-
-      // --------- Midnight Handover Logic -----------
-      const copyHandoverBtn = document.getElementById('copyHandoverText');
-      const handoverTextArea = document.getElementById('handoverText');
-
-      copyHandoverBtn.addEventListener('click', () => {
-        handoverTextArea.select();
-        try {
-          document.execCommand('copy');
-          copyHandoverBtn.textContent = 'Copied!';
-          copyHandoverBtn.style.background = '#44b261';
-          setTimeout(() => {
-            copyHandoverBtn.textContent = 'Copy to Clipboard';
-            copyHandoverBtn.style.background = '#ff44d0';
-          }, 2000);
-        } catch (err) {
-          console.error('Failed to copy text: ', err);
-          copyHandoverBtn.textContent = 'Copy Failed';
-          copyHandoverBtn.style.background = '#d70a33';
-        }
-      });
-
-      // --------- Route Info Logic -----------
-      const routeDd = document.getElementById('routeDropdown');
-      const routeInfoText = document.getElementById('routeInfo');
-      const saveRouteNoteBtn = document.getElementById('saveRouteNote');
-      const routeNotesList = document.getElementById('routeNotesList');
-      let editingNoteId = null;
-
-      function updateSaveButtonState() {
-        saveRouteNoteBtn.disabled = !(routeDd.value && routeInfoText.value.trim());
-      }
-      routeDd.addEventListener('change', updateSaveButtonState);
-      routeInfoText.addEventListener('input', updateSaveButtonState);
-
-      saveRouteNoteBtn.addEventListener('click', () => {
-        const route = routeDd.value;
-        const info = routeInfoText.value.trim();
-        if (!route || !info) return;
-
-        const note = { route, info, timestamp: Date.now() };
-
-        if (editingNoteId) {
-          database.ref('route-info/' + editingNoteId).update(note).then(() => resetForm()).catch(error => {
-            console.error('Error updating note:', error);
-            saveRouteNoteBtn.textContent = 'Error';
-            saveRouteNoteBtn.style.background = '#d70a33';
-          });
-        } else {
-          database.ref('route-info').push(note).then(() => resetForm()).catch(error => {
-            console.error('Error saving note:', error);
-            saveRouteNoteBtn.textContent = 'Error';
-            saveRouteNoteBtn.style.background = '#d70a33';
-          });
-        }
-      });
-
-      function resetForm() {
-        editingNoteId = null;
-        routeDd.value = '';
-        routeInfoText.value = '';
-        saveRouteNoteBtn.disabled = true;
-        saveRouteNoteBtn.textContent = 'Save Note';
-        saveRouteNoteBtn.style.background = '#ff44d0';
-      }
-
-      function loadRouteNotes() {
-        let allNotes = [];
-        database.ref('route-info').on('value', (snapshot) => {
-          const notes = snapshot.val();
-          allNotes = notes ? Object.entries(notes).map(([id, note]) => ({ id, ...note })) : [];
-          renderNotes();
-        });
-
-        function renderNotes() {
-          const selectedRoute = routeDd.value;
-          routeNotesList.innerHTML = '';
-
-          const filteredNotes = selectedRoute ? allNotes.filter(note => note.route === selectedRoute) : [];
-          if (filteredNotes.length === 0) {
-            routeNotesList.innerHTML = '<p>No route notes available for this route.</p>';
-            return;
-          }
-
-          filteredNotes.sort((a, b) => b.timestamp - a.timestamp);
-          filteredNotes.forEach(note => {
-            const noteDiv = document.createElement('div');
-            noteDiv.className = 'route-note';
-            const date = new Date(note.timestamp);
-            noteDiv.innerHTML = `
-              <p><strong>Route ${note.route}:</strong> ${note.info}</p>
-              <p class="timestamp">Posted: ${date.toLocaleString()}</p>
-              <button class="edit-btn" data-id="${note.id}">Edit</button>
-              <button class="delete-btn" data-id="${note.id}">Delete</button>
-            `;
-            routeNotesList.appendChild(noteDiv);
-
-            noteDiv.querySelector('.edit-btn').addEventListener('click', () => {
-              editingNoteId = note.id;
-              routeDd.value = note.route;
-              routeInfoText.value = note.info;
-              saveRouteNoteBtn.textContent = 'Update Note';
-              saveRouteNoteBtn.style.background = '#44b261';
-              updateSaveButtonState();
-            });
-
-            noteDiv.querySelector('.delete-btn').addEventListener('click', () => {
-              database.ref('route-info/' + note.id).remove().catch(error => {
-                console.error('Error deleting note:', error);
-                alert('Failed to delete note.');
-              });
-            });
-          });
-        }
-
-        routeDd.addEventListener('change', () => {
-          if (!editingNoteId) {
-            routeInfoText.value = '';
-            updateSaveButtonState();
-          }
-          renderNotes();
-        });
-
-        tabs.forEach(tab => {
-          tab.addEventListener('click', () => {
-            if (tab.dataset.tab === 'route-info') {
-              resetForm();
-              renderNotes();
-            }
-          });
-        });
-      }
-      loadRouteNotes();
-
-      // --------- Hidden Alarm Feature: Trigger at 18:30 Daily -----------
-      let lastAlarmDate = null;
-
-      function checkAlarm() {
-        const now = new Date();
-        const hours = now.getHours();
-        const minutes = now.getMinutes();
-        const currentDate = getDateYYYYMMDD(now);
-
-        if (hours === 18 && minutes === 30 && lastAlarmDate !== currentDate) {
-          alert("MOVE YOUR CAR");
-          lastAlarmDate = currentDate;
-        }
-      }
-
-      setInterval(checkAlarm, 60000);
-      checkAlarm();
-
-      if (document.querySelector('.tab.active').dataset.tab === 'roster') {
-        loadRotaData();
-      }
-    });
-  </script>
-</body>
-</html>
+      // Hardcoded Rota Data for 12 weeks (Saturday to Friday)
+      const rotaData = {
+        weeks: [
+          {
+            weekCommencing: "14.04.25",
+            dates: ["12/04/2025", "13/04/2025", "14/04/2025", "15/04/2025", "16/04/2025", "17/04/2025", "18/04/2025"],
+            rota: [
+              { controller: "Marco Marcham Sun/Mon Rest", duties: ["FW8E", "RD", "RD", "HOL", "HOL", "FW1L", "FW1L"] },
+              { controller: "Ksenia Banaszak", duties: ["FW1L", "RD", "RD", "FW3E", "FW3E", "FW3E", "FW3E"] },
+              { controller: "Nigel Pitt", duties: ["FW5E", "FW5E", "FW5E", "RD", "RD", "FW8L", "FW8L"] },
+              { controller: "Luke Comfort", duties: ["FW10L", "FW10L", "FW10L", "FW10L", "RD", "FW7E", "RD"] },
+              { controller: "Jakub Fojtik", duties: ["RD", "RD", "FW6E", "FW6E", "FW6E", "FW6E", "FW6E"] },
+              { controller: "Ryszard Blazewicz Sun/Mon Rest", duties: ["HOL", "S", "RD", "RD", "S", "S", "S"] },
+              { controller: "Gurpreet Singh", duties: ["FW6L", "RD", "FW9L", "FW8L", "FW1L", "FW2L", "RD"] },
+              { controller: "Piotr Mistur Tue/Wed Rest", duties: ["FW6E", "FW1E", "FW3E", "Station 11\n0700-1500", "Station 11\n0700-1500", "RD", "RD"] },
+              { controller: "Robin Atha", duties: ["RD", "RD", "FW2E", "FW2E", "FW2E", "FW2E", "FW2E"] },
+              { controller: "Balasingam Thathe", duties: ["FW7L", "RD", "RD", "FW10E", "FW10E", "FW10E", "FW10E"] },
+              { controller: "Lee Sutton", duties: ["FW10E", "FW10E", "FW10E", "RD", "RD", "FW3L", "FW3L"] },
+              { controller: "Rafal Ganczarcyk Tues/Weds Rest", duties: ["FW3L", "FW3L", "FW3L", "HOL", "HOL", "RD", "RD"] },
+              { controller: "Steve Ryan", duties: ["RD", "HOL", "HOL", "FW7L", "FW7L", "FW7L", "RD"] },
+              { controller: "Timea Brinzea", duties: ["FW2E", "RD", "RD", "FW4L", "FW4L", "FW4L", "FW4L"] },
+              { controller: "Tracy Reynolds", duties: ["FW4L", "FW4L", "FW4L", "RD", "RD", "FW9E", "FW9E"] },
+              { controller: "Steve Cummings", duties: ["FW3E", "FW3E", "FW9E", "FW9E", "FW9E", "RD", "RD"] },
+              { controller: "Dennis McDowell Should Be On Earlies", duties: ["RD", "RD", "FW5L", "FW5L", "FW5L", "FW5L", "FW5L"] },
+              { controller: "Hasan Altioglu Sun/Mon Rest", duties: ["FW5L", "FW1L", "RD", "FW1L", "FW8L", "Station 11\n0700-1500", "RD"] },
+              { controller: "Paul Akerman", duties: ["HOL", "HOL", "HOL", "RD", "RD", "HOL", "HOL"] },
+              { controller: "George Whiter", duties: ["AE", "AE", "AE", "AE", "AE", "RD", "RD"] },
+              { controller: "James Davis", duties: ["RD", "RD", "FW1E", "FW1E", "FW1E", "FW1E", "FW1E"] },
+              { controller: "Michal Wilkosz", duties: ["FW1E", "RD", "RD", "FW5E", "FW5E", "FW5E", "FW5E"] },
+              { controller: "Maggie Sharp", duties: ["FW9L", "HOL", "FW6L", "RD", "RD", "FW10L", "FW10L"] },
+              { controller: "Michael Alves", duties: ["FW7E", "FW7E", "FW7E", "FW7E", "FW7E", "RD", "RD"] },
+              { controller: "Joao Oliveira", duties: ["RD", "RD", "HOL", "HOL", "HOL", "HOL", "HOL"] },
+              { controller: "Raj Mehla", duties: ["FW2L", "RD", "RD", "FW3L", "FW3L", "FW6L", "FW6L"] },
+              { controller: "Sharon Lloyd", duties: ["S", "S", "S", "RD", "RD", "S", "S"] },
+              { controller: "Tomasz Lisek", duties: ["FW9E", "FW7L", "FW7L", "FW9L", "FW9L", "RD", "RD"] },
+              { controller: "Tony Walker", duties: ["RD", "RD", "FW8E", "FW8E", "FW8E", "FW8E", "FW8E"] },
+              { controller: "Wayne Hooper", duties: ["HOL", "RD", "RD", "HOL", "HOL", "HOL", "HOL"] },
+              { controller: "Joao Da Cruz", duties: ["FW8L", "FW8L", "FW8L", "RD", "RD", "FW4E", "FW4E"] },
+              { controller: "Lee Upton", duties: ["FW4E", "FW4E", "FW4E", "FW4E", "FW4E", "RD", "RD"] },
+              { controller: "Ozkan Ozbek", duties: ["RD", "RD", "FW2L", "FW2L", "FW10L", "FW9L", "FW9L"] },
+              { controller: "Dan Fogden", duties: ["HOL", "HOL", "RD", "HOL", "HOL", "HOL", "RD"] },
+              { controller: "Ian Matthews", duties: ["RD", "RD", "S", "S", "S", "S", "S"] },
+              { controller: "Arti Papasotiriou", duties: ["Station 11 - Assist SO\n1100-1900", "FW6M", "FW1L", "FW6L", "FW6L", "RD", "RD"] }
+            ]
+          },
+          {
+            weekCommencing: "21.04.25",
+            dates: ["19/04/2025", "20/04/2025", "21/04/2025", "22/04/2025", "23/04/2025", "24/04/2025", "25/04/2025"],
+            rota: [
+              { controller: "Marco Marcham Sun/Mon Rest", duties: ["FW1L", "RD", "RD", "HOL", "HOL", "FW8E", "FW8E"] },
+              { controller: "Ksenia Banaszak", duties: ["FW3E", "RD", "RD", "FW1L", "FW1L", "FW1L", "FW1L"] },
+              { controller: "Nigel Pitt", duties: ["FW8L", "FW8L", "FW8L", "RD", "RD", "FW5E", "FW5E"] },
+              { controller: "Luke Comfort", duties: ["FW7E", "RD", "FW10L", "FW10L", "FW10L", "FW10L", "RD"] },
+              { controller: "Jakub Fojtik", duties: ["FW6E", "FW6E", "RD", "RD", "FW6E", "FW6E", "FW6E"] },
+              { controller: "Ryszard Blazewicz Sun/Mon Rest", duties: ["S", "S", "RD", "RD", "HOL", "S", "S"] },
+              { controller: "Gurpreet Singh", duties: ["FW2L", "RD", "FW6L", "FW9L", "FW8L", "FW1L", "RD"] },
+              { controller: "Piotr Mistur Tue/Wed Rest", duties: ["RD", "RD", "FW6E", "FW1E", "FW3E", "Station 11\n0700-1500", "Station 11\n0700-1500"] },
+              { controller: "Robin Atha", duties: ["FW2E", "FW2E", "RD", "RD", "FW2E", "FW2E", "FW2E"] },
+              { controller: "Balasingam Thathe", duties: ["FW10E", "FW10E", "RD", "RD", "FW7L", "FW10E", "FW10E"] },
+              { controller: "Lee Sutton", duties: ["FW3L", "FW3L", "RD", "RD", "FW10E", "FW10E", "FW10E"] },
+              { controller: "Rafal Ganczarcyk Tues/Weds Rest", duties: ["RD", "RD", "FW3L", "FW3L", "FW3L", "HOL", "HOL"] },
+              { controller: "Steve Ryan", duties: ["FW7L", "FW7L", "RD", "HOL", "HOL", "RD", "FW7L"] },
+              { controller: "Timea Brinzea", duties: ["FW4L", "FW4L", "RD", "RD", "FW2E", "FW4L", "FW4L"] },
+              { controller: "Tracy Reynolds", duties: ["FW9E", "FW9E", "RD", "RD", "FW4L", "FW4L", "FW4L"] },
+              { controller: "Steve Cummings", duties: ["RD", "RD", "FW3E", "FW3E", "FW9E", "FW9E", "FW9E"] },
+              { controller: "Dennis McDowell Should Be On Earlies", duties: ["FW5L", "FW5L", "RD", "RD", "FW5L", "FW5L", "FW5L"] },
+              { controller: "Hasan Altioglu Sun/Mon Rest", duties: ["RD", "RD", "FW5L", "FW1L", "FW8L", "Station 11\n0700-1500", "FW1L"] },
+              { controller: "Paul Akerman", duties: ["HOL", "HOL", "RD", "RD", "HOL", "HOL", "HOL"] },
+              { controller: "George Whiter", duties: ["AE", "AE", "RD", "AE", "AE", "AE", "AE"] },
+              { controller: "James Davis", duties: ["FW1E", "FW1E", "RD", "RD", "FW1E", "FW1E", "FW1E"] },
+              { controller: "Michal Wilkosz", duties: ["FW5E", "FW5E", "RD", "RD", "FW1E", "FW5E", "FW5E"] },
+              { controller: "Maggie Sharp", duties: ["FW10L", "FW10L", "RD", "FW9L", "HOL", "FW6L", "RD"] },
+              { controller: "Michael Alves", duties: ["RD", "RD", "FW7E", "FW7E", "FW7E", "FW7E", "FW7E"] },
+              { controller: "Joao Oliveira", duties: ["HOL", "HOL", "RD", "RD", "RD", "HOL", "HOL"] },
+              { controller: "Raj Mehla", duties: ["FW6L", "FW6L", "RD", "RD", "FW2L", "FW3L", "FW3L"] },
+              { controller: "Sharon Lloyd", duties: ["S", "S", "RD", "RD", "S", "S", "S"] },
+              { controller: "Tomasz Lisek", duties: ["RD", "RD", "FW9E", "FW7L", "FW7L", "FW9L", "FW9L"] },
+              { controller: "Tony Walker", duties: ["FW8E", "FW8E", "RD", "RD", "FW8E", "FW8E", "FW8E"] },
+              { controller: "Wayne Hooper", duties: ["HOL", "HOL", "RD", "RD", "HOL", "RD", "RD"] },
+              { controller: "Joao Da Cruz", duties: ["FW4E", "FW4E", "RD", "RD", "FW8L", "FW8L", "FW8L"] },
+              { controller: "Lee Upton", duties: ["RD", "RD", "FW4E", "FW4E", "FW4E", "FW4E", "FW4E"] },
+              { controller: "Ozkan Ozbek", duties: ["FW9L", "FW9L", "RD", "RD", "FW2L", "FW2L", "FW10L"] },
+              { controller: "Dan Fogden", duties: ["HOL", "HOL", "RD", "HOL", "HOL", "RD", "HOL"] },
+              { controller: "Ian Matthews", duties: ["S", "S", "RD", "RD", "S", "S", "S"] },
+              { controller: "Arti Papasotiriou", duties: ["FW6L", "FW6L", "RD", "Station 11 - Assist SO\n1100-1900", "FW6M", "FW1L", "FW6L"] }
+            ]
+          },
+          {
+            weekCommencing: "28.04.25",
+            dates: ["26/04/2025", "27/04/2025", "28/04/2025", "29/04/2025", "30/04/2025", "01/05/2025", "02/05/2025"],
+            rota: [
+              { controller: "Marco Marcham Sun/Mon Rest", duties: ["FW8E", "RD", "RD", "HOL", "HOL", "FW1L", "FW1L"] },
+              { controller: "Ksenia Banaszak", duties: ["FW1L", "RD", "RD", "FW3E", "FW3E", "FW3E", "FW3E"] },
+              { controller: "Nigel Pitt", duties: ["FW5E", "FW5E", "FW5E", "RD", "RD", "FW8L", "FW8L"] },
+              { controller: "Luke Comfort", duties: ["FW10L", "FW10L", "FW10L", "FW10L", "RD", "FW7E", "RD"] },
+              { controller: "Jakub Fojtik", duties: ["RD", "RD", "FW6E", "FW6E", "FW6E", "FW6E", "FW6E"] },
+              { controller: "Ryszard Blazewicz Sun/Mon Rest", duties: ["HOL", "S", "RD", "RD", "S", "S", "S"] },
+              { controller: "Gurpreet Singh", duties: ["FW6L", "RD", "FW9L", "FW8L", "FW1L", "FW2L", "RD"] },
+              { controller: "Piotr Mistur Tue/Wed Rest", duties: ["FW6E", "FW1E", "FW3E", "Station 11\n0700-1500", "Station 11\n0700-1500", "RD", "RD"] },
+              { controller: "Robin Atha", duties: ["RD", "RD", "FW2E", "FW2E", "FW2E", "FW2E", "FW2E"] },
+              { controller: "Balasingam Thathe", duties: ["FW7L", "RD", "RD", "FW10E", "FW10E", "FW10E", "FW10E"] },
+              { controller: "Lee Sutton", duties: ["FW10E", "FW10E", "FW10E", "RD", "RD", "FW3L", "FW3L"] },
+              { controller: "Rafal Ganczarcyk Tues/Weds Rest", duties: ["FW3L", "FW3L", "FW3L", "HOL", "HOL", "RD", "RD"] },
+              { controller: "Steve Ryan", duties: ["RD", "HOL", "HOL", "FW7L", "FW7L", "FW7L", "RD"] },
+              { controller: "Timea Brinzea", duties: ["FW2E", "RD", "RD", "FW4L", "FW4L", "FW4L", "FW4L"] },
+              { controller: "Tracy Reynolds", duties: ["FW4L", "FW4L", "FW4L", "RD", "RD", "FW9E", "FW9E"] },
+              { controller: "Steve Cummings", duties: ["FW3E", "FW3E", "FW9E", "FW9E", "FW9E", "RD", "RD"] },
+              { controller: "Dennis McDowell Should Be On Earlies", duties: ["RD", "RD", "FW5L", "FW5L", "FW5L", "FW5L", "FW5L"] },
+              { controller: "Hasan Altioglu Sun/Mon Rest", duties: ["FW5L", "FW1L", "RD", "FW1L", "FW8L", "Station 11\n0700-1500", "RD"] },
+              { controller: "Paul Akerman", duties: ["HOL", "HOL", "HOL", "RD", "RD", "HOL", "HOL"] },
+              { controller: "George Whiter", duties: ["AE", "AE", "AE", "AE", "AE", "RD", "RD"] },
+              { controller: "James Davis", duties: ["RD", "RD", "FW1E", "FW1E", "FW1E", "FW1E", "FW1E"] },
+              { controller: "Michal Wilkosz", duties: ["FW1E", "RD", "RD", "FW5E", "FW5E", "FW5E", "FW5E"] },
+              { controller: "Maggie Sharp", duties: ["FW9L", "HOL", "FW6L", "RD", "RD", "FW10L", "FW10L"] },
+              { controller: "Michael Alves", duties: ["FW7E", "FW7E", "FW7E", "FW7E", "FW7E", "RD", "RD"] },
+              { controller: "Joao Oliveira", duties: ["RD", "RD", "HOL", "HOL", "HOL", "HOL", "HOL"] },
+              { controller: "Raj Mehla", duties: ["FW2L", "RD", "RD", "FW3L", "FW3L", "FW6L", "FW6L"] },
+              { controller: "Sharon Lloyd", duties: ["S", "S", "S", "RD", "RD", "S", "S"] },
+              { controller: "Tomasz Lisek", duties: ["FW9E", "FW7L", "FW7L", "FW9L", "FW9L", "RD", "RD"] },
+              { controller: "Tony Walker", duties: ["RD", "RD", "FW8E", "FW8E", "FW8E", "FW8E", "FW8E"] },
+              { controller: "Wayne Hooper", duties: ["HOL", "RD", "RD", "HOL", "HOL", "HOL", "HOL"] },
+              { controller: "Joao Da Cruz", duties: ["FW8L", "FW8L", "FW8L", "RD", "RD", "FW4E", "FW4E"] },
+              { controller: "Lee Upton", duties: ["FW4E", "FW4E", "FW4E", "FW4E", "FW4E", "RD", "RD"] },
+              { controller: "Ozkan Ozbek", duties: ["RD", "RD", "FW2L", "FW2L", "FW10L", "FW9L", "FW9L"] },
+              { controller: "Dan Fogden", duties: ["HOL", "HOL", "RD", "HOL", "HOL", "HOL", "RD"] },
+              { controller: "Ian Matthews", duties: ["RD", "RD", "S", "S", "S", "S", "S"] },
+              { controller: "Arti Papasotiriou", duties: ["Station 11 - Assist SO\n1100-1900", "FW6M", "FW1L", "FW6L", "FW6L", "RD", "RD"] }
+            ]
+          },
+          {
+            weekCommencing: "05.05.25",
+            dates: ["03/05/2025", "04/05/2025", "05/05/2025", "06/05/2025", "07/05/2025", "08/05/2025", "09/05/2025"],
+            rota: [
+              { controller: "Marco Marcham Sun/Mon Rest", duties: ["FW1L", "RD", "RD", "HOL", "HOL", "FW8E", "FW8E"] },
+              { controller: "Ksenia Banaszak", duties: ["FW3E", "RD", "RD", "FW1L", "FW1L", "FW1L", "FW1L"] },
+              { controller: "Nigel Pitt", duties: ["FW8L", "FW8L", "FW8L", "RD", "RD", "FW5E", "FW5E"] },
+              { controller: "Luke Comfort", duties: ["FW7E", "RD", "FW10L", "FW10L", "FW10L", "FW10L", "RD"] },
+              { controller: "Jakub Fojtik", duties: ["FW6E", "FW6E", "RD", "RD", "FW6E", "FW6E", "FW1E"] },
+              { controller: "Ryszard Blazewicz Sun/Mon Rest", duties: ["S", "S", "RD", "RD", "HOL", "S", "S"] },
+              { controller: "Gurpreet Singh", duties: ["FW2L", "RD", "FW6L", "FW9L", "FW8L", "FW1L", "RD"] },
+              { controller: "Piotr Mistur Tue/Wed Rest", duties: ["RD", "RD", "FW6E", "FW1E", "FW3E", "Station 11\n0700-1500", "Station 11\n0700-1500"] },
+              { controller: "Robin Atha", duties: ["FW2E", "FW2E", "RD", "RD", "FW2E", "FW2E", "FW2E"] },
+              { controller: "Balasingam Thathe", duties: ["FW10E", "FW10E", "RD", "RD", "FW7L", "FW10E", "FW10E"] },
+              { controller: "Lee Sutton", duties: ["FW3L", "FW3L", "RD", "RD", "FW10E", "FW10E", "FW10E"] },
+              { controller: "Rafal Ganczarcyk Tues/Weds Rest", duties: ["RD", "RD", "FW3L", "FW3L", "FW3L", "HOL", "HOL"] },
+              { controller: "Steve Ryan", duties: ["FW7L", "FW7L", "RD", "HOL", "HOL", "RD", "FW7L"] },
+              { controller: "Timea Brinzea", duties: ["FW4L", "FW4L", "RD", "RD", "FW2E", "FW4L", "FW4L"] },
+              { controller: "Tracy Reynolds", duties: ["FW9E", "FW9E", "RD", "RD", "FW4L", "FW4L", "FW4L"] },
+              { controller: "Steve Cummings", duties: ["RD", "RD", "FW3E", "FW3E", "FW9E", "FW9E", "FW9E"] },
+              { controller: "Dennis McDowell Should Be On Earlies", duties: ["FW5L", "FW5L", "RD", "RD", "FW5L", "FW5L", "FW5L"] },
+              { controller: "Hasan Altioglu Sun/Mon Rest", duties: ["RD", "RD", "FW5L", "FW1L", "FW8L", "Station 11\n0700-1500", "FW1L"] },
+              { controller: "Paul Akerman", duties: ["HOL", "HOL", "RD", "RD", "HOL", "HOL", "HOL"] },
+              { controller: "George Whiter", duties: ["AE", "AE", "RD", "AE", "AE", "AE", "AE"] },
+              { controller: "James Davis", duties: ["FW1E", "FW1E", "RD", "RD", "FW1E", "FW1E", "FW1E"] },
+              { controller: "Michal Wilkosz", duties: ["FW5E", "FW5E", "RD", "RD", "FW1E", "FW5E", "FW5E"] },
+              { controller: "Maggie Sharp", duties: ["FW10L", "FW10L", "RD", "FW9L", "HOL", "FW6L", "RD"] },
+              { controller: "Michael Alves", duties: ["RD", "RD", "FW7E", "FW7E", "FW7E", "FW7E", "FW7E"] },
+              { controller: "Joao Oliveira", duties: ["HOL", "HOL", "RD", "RD", "RD", "HOL", "HOL"] },
+              { controller: "Raj Mehla", duties: ["FW6L", "FW6L", "RD", "RD", "FW2L", "FW3L", "FW3L"] },
+              { controller: "Sharon Lloyd", duties: ["S", "S", "RD", "RD", "S", "S", "S"] },
+              { controller: "Tomasz Lisek", duties: ["RD", "RD", "FW9E", "FW7L", "FW7L", "FW9L", "FW9L"] },
+              { controller: "Tony Walker", duties: ["FW8E", "FW8E", "RD", "RD", "FW8E", "FW8E", "FW8E"] },
+              { controller: "Wayne Hooper", duties: ["HOL", "HOL", "RD", "RD", "HOL", "RD", "RD"] },
+              { controller: "Joao Da Cruz", duties: ["FW4E", "FW4E", "RD", "RD", "FW8L", "FW8L", "FW8L"] },
+              { controller: "Lee Upton", duties: ["RD", "RD", "FW4E", "FW4E", "FW4E", "FW4E", "FW4E"] },
+              { controller: "Ozkan Ozbek", duties: ["FW9L", "FW9L", "RD", "RD", "FW2L", "FW2L", "FW10L"] },
+              { controller: "Dan Fogden", duties: ["HOL", "HOL", "RD", "HOL", "HOL", "RD", "HOL"] },
+              { controller: "Ian Matthews", duties: ["S", "S", "RD", "RD", "S", "S", "S"] },
+              { controller: "Arti Papasotiriou", duties: ["FW6L", "FW6L", "RD", "Station 11 - Assist SO\n1100-1900", "FW6M", "FW1L", "FW6L"] }
+            ]
+          },
+          {
+            weekCommencing: "12.05.25",
+            dates: ["10/05/2025", "11/05/2025", "12/05/2025", "13/05/2025", "14/05/2025", "15/05/2025", "16/05/2025"],
+            rota: [
+              { controller: "Marco Marcham Sun/Mon Rest", duties: ["FW8E", "RD", "RD", "HOL", "HOL", "FW1L", "FW1L"] },
+              { controller: "Ksenia Banaszak", duties: ["FW1L", "RD", "RD", "FW3E", "FW3E", "FW3E", "FW3E"] },
+              { controller: "Nigel Pitt", duties: ["FW5E", "FW5E", "FW5E", "RD", "RD", "FW8L", "FW8L"] },
+              { controller: "Luke Comfort", duties: ["FW10L", "FW10L", "FW10L", "FW10L", "RD", "FW7E", "RD"] },
+              { controller: "Jakub Fojtik", duties: ["RD", "RD", "FW6E", "FW6E", "FW6E", "FW6E", "FW6E"] },
+              { controller: "Ryszard Blazewicz Sun/Mon Rest", duties: ["HOL", "S", "RD", "RD", "S", "S", "S"] },
+              { controller: "Gurpreet Singh", duties: ["FW6L", "RD", "FW9L", "FW8L", "FW1L", "FW2L", "RD"] },
+              { controller: "Piotr Mistur Tue/Wed Rest", duties: ["FW6E", "FW1E", "FW3E", "Station 11\n0700-1500", "Station 11\n0700-1500", "RD", "RD"] },
+              { controller: "Robin Atha", duties: ["RD", "RD", "FW2E", "FW2E", "FW2E", "FW2E", "FW2E"] },
+              { controller: "Balasingam Thathe", duties: ["FW7L", "RD", "RD", "FW10E", "FW10E", "FW10E", "FW10E"] },
+              { controller: "Lee Sutton", duties: ["FW10E", "FW10E", "FW10E", "RD", "RD", "FW3L", "FW3L"] },
+              { controller: "Rafal Ganczarcyk Tues/Weds Rest", duties: ["FW3L", "FW3L", "FW3L", "HOL", "HOL", "RD", "RD"] },
+              { controller: "Steve Ryan", duties: ["RD", "HOL", "HOL", "FW7L", "FW7L", "FW7L", "RD"] },
+              { controller: "Timea Brinzea", duties: ["FW2E", "RD", "RD", "FW4L", "FW4L", "FW4L", "FW4L"] },
+              { controller: "Tracy Reynolds", duties: ["FW4L", "FW4L", "FW4L", "RD", "RD", "FW9E", "FW9E"] },
+              { controller: "Steve Cummings", duties: ["FW3E", "FW3E", "FW9E", "FW9E", "FW9E", "RD", "RD"] },
+              { controller: "Dennis McDowell Should Be On Earlies", duties: ["RD", "RD", "FW5L", "FW5L", "FW5L", "FW5L", "FW5L"] },
+              { controller: "Hasan Altioglu Sun/Mon Rest", duties: ["FW5L", "FW1L", "RD", "FW1L", "FW8L", "Station 11\n0700-1500", "RD"] },
+              { controller: "Paul Akerman", duties: ["HOL", "HOL", "HOL", "RD", "RD", "HOL", "HOL"] },
+              { controller: "George Whiter", duties: ["AE", "AE", "AE", "AE", "AE", "RD", "RD"] },
+              { controller: "James Davis", duties: ["RD", "RD", "FW1E", "FW1E", "FW1E", "FW1E", "FW1E"] },
+              { controller: "Michal Wilkosz", duties: ["FW1E", "RD", "RD", "FW5E", "FW5E", "FW5E", "FW5E"] },
+              { controller: "Maggie Sharp", duties: ["FW9L", "HOL", "FW6L", "RD", "RD", "FW10L", "FW10L"] },
+              { controller: "Michael Alves", duties: ["FW7E", "FW7E", "FW7E", "FW7E", "FW7E", "RD", "RD"] },
+              { controller: "Joao Oliveira", duties: ["RD", "RD", "HOL", "HOL", "HOL", "HOL", "HOL"] },
+              { controller: "Raj Mehla", duties: ["FW2L", "RD", "RD", "FW3L", "FW3L", "FW6L", "FW6L"] },
+              { controller: "Sharon Lloyd", duties: ["S", "S", "S", "RD", "RD", "S", "S"] },
+              { controller: "Tomasz Lisek", duties: ["FW9E", "FW7L", "FW7L", "FW9L", "FW9L", "RD", "RD"] },
+              { controller: "Tony Walker", duties: ["RD", "RD", "FW8E", "FW8E", "FW8E", "FW8E", "FW8E"] },
+              { controller: "Wayne Hooper", duties: ["HOL", "RD", "RD", "HOL", "HOL", "HOL", "HOL"] },
+              { controller: "Joao Da Cruz", duties: ["FW8L", "FW8L", "FW8L", "RD", "RD", "FW4E", "FW4E"] },
+              { controller: "Lee Upton", duties: ["FW4E", "FW4E", "FW4E", "FW4E", "FW4E", "RD", "RD"] },
+              { controller: "Ozkan Ozbek", duties: ["RD", "RD", "FW2L", "FW2L", "FW10L", "FW9L", "FW9L"] },
+              { controller: "Dan Fogden", duties: ["HOL", "HOL", "RD", "HOL", "HOL", "HOL", "RD"] },
+              { controller: "Ian Matthews", duties: ["RD", "RD", "S", "S", "S", "S", "S"] },
+              { controller: "Arti Papasotiriou", duties: ["Station 11 - Assist SO\n1100-1900", "FW6M", "FW1L", "FW6L", "FW6L", "RD", "RD"] }
+            ]
+          },
+          {
+            weekCommencing: "19.05.25",
+            dates: ["17/05/2025", "18/05/2025", "19/05/2025", "20/05/2025", "21/05/2025", "22/05/2025", "23/05/2025"],
+            rota: [
+              { controller: "Marco Marcham Sun/Mon Rest", duties: ["FW1L", "RD", "RD", "HOL", "HOL", "FW8E", "FW8E"] },
+              { controller: "Ksenia Banaszak", duties: ["FW3E", "RD", "RD", "FW1L", "FW1L", "FW1L", "FW1L"] },
+              { controller: "Nigel Pitt", duties: ["FW8L", "FW8L", "FW8L", "RD", "RD", "FW5E", "FW5E"] },
+              { controller: "Luke Comfort", duties: ["FW7E", "RD", "FW10L", "FW10L", "FW10L", "FW10L", "RD"] },
+              { controller: "Jakub Fojtik", duties: ["FW6E", "FW6E", "RD", "RD", "FW6E", "FW6E", "FW6E"] },
+              { controller: "Ryszard Blazewicz Sun/Mon Rest", duties: ["S", "S", "RD", "RD", "HOL", "S", "S"] },
+              { controller: "Gurpreet Singh", duties: ["FW2L", "RD", "FW6L", "FW9L", "FW8L", "FW1L", "RD"] },
+              { controller: "Piotr Mistur Tue/Wed Rest", duties: ["RD", "RD", "FW6E", "FW1E", "FW3E", "Station 11\n0700-1500", "Station 11\n0700-1500"] },
+              { controller: "Robin Atha", duties: ["FW2E", "FW2E", "RD", "RD", "FW2E", "FW2E", "FW2E"] },
+              { controller: "Balasingam Thathe", duties: ["FW10E", "FW10E", "RD", "RD", "FW7L", "FW10E", "FW10E"] },
+              { controller: "Lee Sutton", duties: ["FW3L", "FW3L", "RD", "RD", "FW10E", "FW10E", "FW10E"] },
+              { controller: "Rafal Ganczarcyk Tues/Weds Rest", duties: ["RD", "RD", "FW3L", "FW3L", "FW3L", "HOL", "HOL"] },
+              { controller: "Steve Ryan", duties: ["FW7L", "FW7L", "RD", "HOL", "HOL", "RD", "FW7L"] },
+              { controller: "Timea Brinzea", duties: ["FW4L", "FW4L", "RD", "RD", "FW2E", "FW4L", "FW4L"] },
+              { controller: "Tracy Reynolds", duties: ["FW9E", "FW9E", "RD", "RD", "FW4L", "FW4L", "FW4L"] },
+              { controller: "Steve Cummings", duties: ["RD", "RD", "FW3E", "FW3E", "FW9E", "FW9E", "FW9E"] },
+              { controller: "Dennis McDowell Should Be On Earlies", duties: ["FW5L", "FW5L", "RD", "RD", "FW5L", "FW5L", "FW5L"] },
+              { controller: "Hasan Altioglu Sun/Mon Rest", duties: ["RD", "RD", "FW5L", "FW1L", "FW8L", "Station 11\n0700-1500", "FW1L"] },
+              { controller: "Paul Akerman", duties: ["HOL", "HOL", "RD", "RD", "HOL", "HOL", "HOL"] },
+              { controller: "George Whiter", duties: ["AE", "AE", "RD", "AE", "AE", "AE", "AE"] },
+              { controller: "James Davis", duties: ["FW1E", "FW1E", "RD", "RD", "FW1E", "FW1E", "FW1E"] },
+              { controller: "Michal Wilkosz", duties: ["FW5E", "FW5E", "RD", "RD", "FW1E", "FW5E", "FW5E"] },
+              { controller: "Maggie Sharp", duties: ["FW10L", "FW10L", "RD", "FW9L", "HOL", "FW6L", "RD"] },
+              { controller: "Michael Alves", duties: ["RD", "RD", "FW7E", "FW7E", "FW7E", "FW7E", "FW7E"] },
+              { controller: "Joao Oliveira", duties: ["HOL", "HOL", "RD", "RD", "RD", "HOL", "HOL"] },
+              { controller: "Raj Mehla", duties: ["FW6L", "FW6L", "RD", "RD", "FW2L", "FW3L", "FW3L"] },
+              { controller: "Sharon Lloyd", duties: ["S", "S", "RD", "RD", "S", "S", "S"] },
+              { controller: "Tomasz Lisek", duties: ["RD", "RD", "FW9E", "FW7L", "FW7L", "FW9L", "FW9L"] },
+              { controller: "Tony Walker", duties: ["FW8E", "FW8E", "RD", "RD", "FW8E", "FW8E", "FW8E"] },
+              { controller: "Wayne Hooper", duties: ["HOL", "HOL", "RD", "RD", "HOL", "RD", "RD"] },
+              { controller: "Joao Da Cruz", duties: ["FW4E", "FW4E", "RD", "RD", "FW8L", "FW8L", "FW8L"] },
+              { controller: "Lee Upton", duties: ["RD", "RD", "FW4E", "FW4E", "FW4E", "FW4E", "FW4E"] },
+              { controller: "Ozkan Ozbek", duties: ["FW9L", "FW9L", "RD", "RD", "FW2L", "FW2L", "FW10L"] },
+              { controller: "Dan Fogden", duties: ["HOL", "HOL", "RD", "HOL", "HOL", "RD", "HOL"] },
+              { controller: "Ian Matthews", duties: ["S", "S", "RD", "RD", "S", "S", "S"] },
+              { controller: "Arti Papasotiriou", duties: ["FW6L", "FW6L", "RD", "Station 11 - Assist SO\n1100-1900", "FW6M", "FW1L", "FW6L"] }
+            ]
+          },
+          {
+            weekCommencing: "26.05.25",
+            dates: ["24/05/2025", "25/05/2025", "26/05/2025", "27/05/2025", "28/05/2025",
