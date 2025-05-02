@@ -100,6 +100,10 @@
       background: #faf7ff;
       font-weight: 600;
     }
+    .rota-table th.current-date {
+      background: #ff44d0;
+      color: #fff;
+    }
     .rota-table tr:nth-child(even) {
       background: #f9f9ff;
     }
@@ -465,10 +469,36 @@ Events taking place/due to take place: </textarea>
       firebase.initializeApp(firebaseConfig);
       const database = firebase.database();
 
-      // ---------------- Helper Function for Date Formatting ----------------
+      // ---------------- Helper Functions ----------------
       function pad(n) { return n < 10 ? '0' + n : n; }
       function getDateYYYYMMDD(date) {
         return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+      }
+
+      // Parse dates like "SAT 26TH April" to Date objects
+      function parseExcelDate(dateStr, assumedYear = 2025) {
+        if (!dateStr || typeof dateStr !== 'string') return null;
+        // Example: "SAT 26TH April" -> "26TH April"
+        const parts = dateStr.split(' ');
+        if (parts.length < 3) return null;
+        const dayStr = parts[1].replace(/TH|ST|ND|RD/, ''); // "26TH" -> "26"
+        const monthStr = parts[2]; // "April"
+        const monthNames = {
+          'January': 0, 'February': 1, 'March': 2, 'April': 3, 'May': 4, 'June': 5,
+          'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
+        };
+        const month = monthNames[monthStr];
+        if (month === undefined || !dayStr) return null;
+        const day = parseInt(dayStr, 10);
+        return new Date(assumedYear, month, day);
+      }
+
+      // Format date for display: "26TH April"
+      function formatDateForHeader(dateStr) {
+        if (!dateStr || typeof dateStr !== 'string') return 'Unknown';
+        const parts = dateStr.split(' ');
+        if (parts.length < 3) return dateStr;
+        return `${parts[1]} ${parts[2]}`; // "26TH April"
       }
 
       // ---------------- Tab UI Logic ----------------
@@ -536,12 +566,12 @@ Events taking place/due to take place: </textarea>
           const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
           const sheetNames = workbook.SheetNames;
-          const mostRecentSheet = selectMostRecentSheet(sheetNames);
-          if (!mostRecentSheet) {
-            throw new Error('No valid sheets found in the rota file.');
+          const currentSheet = selectCurrentWeekSheet(sheetNames);
+          if (!currentSheet) {
+            throw new Error('No sheet found for the current week.');
           }
 
-          const sheet = workbook.Sheets[mostRecentSheet];
+          const sheet = workbook.Sheets[currentSheet];
           const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
           displayRota(rawData);
@@ -552,44 +582,66 @@ Events taking place/due to take place: </textarea>
         }
       }
 
-      function selectMostRecentSheet(sheetNames) {
-        let latestSheet = null;
-        let latestDate = null;
+      function selectCurrentWeekSheet(sheetNames) {
+        const today = new Date(2025, 4, 2); // May 2, 2025
+        let selectedSheet = null;
 
         sheetNames.forEach(sheetName => {
           const match = sheetName.match(/WC (\d{2})\.(\d{2})\.(\d{2})/);
           if (match) {
             const day = parseInt(match[1], 10);
-            const month = parseInt(match[2], 10) - 1;
+            const month = parseInt(match[2], 10) - 1; // Months are 0-based
             const year = 2000 + parseInt(match[3], 10);
-            const sheetDate = new Date(year, month, day);
+            const monday = new Date(year, month, day); // Monday of the week
 
-            if (!latestDate || sheetDate > latestDate) {
-              latestDate = sheetDate;
-              latestSheet = sheetName;
+            // Calculate Sunday of the week (6 days after Monday)
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            // Check if today falls within this week (Monday to Sunday)
+            if (today >= monday && today <= sunday) {
+              selectedSheet = sheetName;
             }
           }
         });
 
-        return latestSheet;
+        // If no sheet matches the current week, fall back to the most recent sheet
+        if (!selectedSheet) {
+          let latestDate = null;
+          sheetNames.forEach(sheetName => {
+            const match = sheetName.match(/WC (\d{2})\.(\d{2})\.(\d{2})/);
+            if (match) {
+              const day = parseInt(match[1], 10);
+              const month = parseInt(match[2], 10) - 1;
+              const year = 2000 + parseInt(match[3], 10);
+              const sheetDate = new Date(year, month, day);
+
+              if (!latestDate || sheetDate > latestDate) {
+                latestDate = sheetDate;
+                selectedSheet = sheetName;
+              }
+            }
+          });
+        }
+
+        return selectedSheet;
       }
 
       function extractDutyCode(value) {
-        if (!value || typeof value !== 'string') return 'N/A';
-        // Split the cell value by space and take the first part (the duty code)
+        if (value === undefined || value === null || value === '') return '-';
+        if (typeof value !== 'string') value = String(value);
         const parts = value.trim().split(' ');
-        return parts[0] || 'N/A';
+        return parts[0] || '-';
       }
 
       function populateControllerDropdown(rawData) {
         const controllers = new Set();
         for (let i = 1; i < rawData.length; i++) {
           const row = rawData[i];
-          if (row && row.length > 4) {
-            const controller = row[4]; // Controller name is in Column E (index 4)
-            if (controller && typeof controller === 'string' && controller.trim() !== '') {
-              controllers.add(controller.trim());
-            }
+          if (!row || row.length < 5) continue; // Need at least Column E (index 4)
+          const controller = row[4]; // Controller name in Column E
+          if (controller && typeof controller === 'string' && controller.trim() !== '') {
+            controllers.add(controller.trim());
           }
         }
         controllerSelect.innerHTML = '<option value="">All Controllers</option>';
@@ -611,12 +663,32 @@ Events taking place/due to take place: </textarea>
         const table = document.createElement('table');
         table.className = 'rota-table';
 
-        // Use static headers for the days of the week
-        const headers = ['Duty', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+        // Extract dynamic headers from Row 1 (indices 5 to 11)
+        const dateRow = rawData[0] || [];
+        const dates = [];
+        for (let i = 5; i <= 11; i++) {
+          dates.push(dateRow[i] || 'Unknown');
+        }
+
+        // Parse dates for highlighting the current date
+        const parsedDates = dates.map(dateStr => parseExcelDate(dateStr, 2025));
+        const today = new Date(2025, 4, 2); // May 2, 2025
+        const todayStr = getDateYYYYMMDD(today);
+
+        // Create headers
         const headerRow = document.createElement('tr');
-        headers.forEach(headerText => {
+        const headers = ['Duty', ...dates.map(formatDateForHeader)];
+        headers.forEach((headerText, index) => {
           const th = document.createElement('th');
           th.textContent = headerText;
+          // Highlight the current date column (skip the first column "Duty")
+          if (index > 0) {
+            const dateIndex = index - 1;
+            const date = parsedDates[dateIndex];
+            if (date && getDateYYYYMMDD(date) === todayStr) {
+              th.classList.add('current-date');
+            }
+          }
           headerRow.appendChild(th);
         });
         table.appendChild(headerRow);
@@ -625,13 +697,11 @@ Events taking place/due to take place: </textarea>
         let dataRows = [];
         for (let i = 1; i < rawData.length; i++) {
           const row = rawData[i];
-          if (!row || row.length < 12) continue; // Ensure row has enough columns
+          if (!row || row.length < 5) continue; // Need at least Column E (index 4)
 
-          // Controller name is in Column E (index 4)
-          const controller = row[4] || 'N/A';
-          if (controller === 'N/A') continue; // Skip rows without a controller name
+          const controller = row[4] ? String(row[4]).trim() : '-';
+          if (controller === '-') continue; // Skip rows without a controller name
 
-          // Duties are in Columns F to L (indices 5 to 11)
           const sat = extractDutyCode(row[5]);
           const sun = extractDutyCode(row[6]);
           const mon = extractDutyCode(row[7]);
@@ -897,5 +967,5 @@ Events taking place/due to take place: </textarea>
       }
     });
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9395e158f959678a',t:'MTc0NjE3MTcyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
