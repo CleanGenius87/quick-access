@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-29 22:00 BST -->
+<!-- Forcing GitHub Pages redeploy to clear cache: 2025-05-02 14:00 BST -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -8,6 +8,8 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- SheetJS Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
       background: #2c0078;
@@ -75,6 +77,35 @@
     .route-note .delete-btn { background: #ff4444; color: #fff; }
     .route-note .edit-btn { background: #44b261; color: #fff; }
     .route-note .timestamp { font-size: 0.85rem; color: #666; }
+    .rota-table-container {
+      margin-top: 20px;
+      padding: 10px;
+      background: #ede7fd;
+      border-radius: 6px;
+      overflow-x: auto;
+      max-width: 100%;
+    }
+    .rota-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      color: #36297d;
+    }
+    .rota-table th, .rota-table td {
+      border: 1px solid #d3d3d3;
+      padding: 8px;
+      text-align: left;
+    }
+    .rota-table th {
+      background: #faf7ff;
+      font-weight: 600;
+    }
+    .rota-table tr:nth-child(even) {
+      background: #f9f9ff;
+    }
+    .rota-table tr:hover {
+      background: #e6e2f9;
+    }
     @media (max-width: 600px) {
       .container {padding: 12px 2vw; max-width: 100vw;}
       .logo {width: 48vw; max-width: 225px;}
@@ -84,6 +115,7 @@
       textarea { height: 80px; }
       .route-note p { font-size: 0.9rem; }
       .route-note .delete-btn, .route-note .edit-btn { padding: 3px 6px; font-size: 0.85rem; }
+      .rota-table th, .rota-table td { font-size: 0.85rem; padding: 6px; }
     }
   </style>
 </head>
@@ -91,14 +123,14 @@
   <div class="container">
     <img src="https://www.firstbus.co.uk/themes/custom/first_bus/logo.svg" class="logo" alt="First Bus Logo">
     <div class="tabs">
-      <div class="tab active" data-tab="access">Quick Access</div>
-      <div class="tab" data-tab="roster">Duty Roster</div>
+      <div class="tab" data-tab="access">Quick Access</div>
+      <div class="tab active" data-tab="roster">Rota</div>
       <div class="tab" data-tab="toilet">Toilet Codes</div>
       <div class="tab" data-tab="handover">Midnight Handover</div>
       <div class="tab" data-tab="route-info">Route Info</div>
     </div>
     <!-- Tab 1: Quick Access -->
-    <div class="tab-content active" id="tab-access">
+    <div class="tab-content" id="tab-access">
       <div class="dropdown-section">
         <label for="websiteDropdown">Websites</label>
         <select id="websiteDropdown">
@@ -135,19 +167,10 @@
       </div>
     </div>
 
-    <!-- Tab 2: Duty Roster -->
-    <div class="tab-content" id="tab-roster">
-      <div class="actions" style="margin-top:0;margin-bottom:17px;">
-        <button id="showBulkDuty">Add My Duties for Month</button>
-      </div>
-      <div id="bulkDutyFormArea"></div>
-      <div style="margin-top:9px;">
-        <label for="view-date">Who's Working (choose a date):</label>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <input type="date" id="view-date" style="flex:1;">
-          <button id="refreshDuties" style="padding:8px 16px;background:#ff44d0;color:#fff;border-radius:6px;font-size:0.95rem;">Refresh</button>
-        </div>
-        <ul class="duty-list" id="dutyList"></ul>
+    <!-- Tab 2: Rota -->
+    <div class="tab-content active" id="tab-roster">
+      <div class="rota-table-container">
+        <div id="rotaTable"></div>
       </div>
     </div>
 
@@ -421,649 +444,461 @@ Events taking place/due to take place: </textarea>
   </div>
 
   <script>
-    // ---------------- Firebase Initialization ----------------
-    const firebaseConfig = {
-      apiKey: "AIzaSyDdFpRnDajt4QGWXkkliyS5fbxwmF_uGTI",
-      authDomain: "quick-access-4ecd5.firebaseapp.com",
-      databaseURL: "https://quick-access-4ecd5-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "quick-access-4ecd5",
-      storageBucket: "quick-access-4ecd5.firebasestorage.app",
-      messagingSenderId: "666068072894",
-      appId: "1:666068072894:web:5b25db2dcd137bdb5c61ef"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    // ---------------- Tab UI Logic ----------------
-    const tabs = document.querySelectorAll('.tab');
-    const tabContents = document.querySelectorAll('.tab-content');
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        tabContents.forEach(tc => tc.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-        
-        // When switching to Duty Roster tab, set date to current day
-        if (tab.dataset.tab === 'roster') {
-          setCurrentDate();
-        }
-      });
-    });
-
-    // ------------ Quick Access Logic -------------
-    const siteDd = document.getElementById('websiteDropdown');
-    const openWebsiteBtn = document.getElementById('openWebsite');
-    siteDd.addEventListener('change', () => {
-      openWebsiteBtn.disabled = !siteDd.value;
-    });
-    openWebsiteBtn.addEventListener('click', () => {
-      if (siteDd.value) {
-        const link = document.createElement('a');
-        link.href = siteDd.value;
-        link.target = '_blank';
-        link.click();
-      }
-    });
-
-    const fileDd = document.getElementById('fileDropdown');
-    const openFileBtn = document.getElementById('openFile');
-    fileDd.addEventListener('change', () => {
-      openFileBtn.disabled = !fileDd.value;
-    });
-    openFileBtn.addEventListener('click', () => {
-      if (fileDd.value) {
-        const link = document.createElement('a');
-        link.href = fileDd.value;
-        link.download = '';
-        link.click();
-      }
-    });
-
-    // --------- Duty Roster Logic -----------
-    // Google Form URL and field IDs
-    const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeQ91haVeFLxHLn1WrwGWNM0vpmAoDfbjaS1AihHYI9s6STOA/formResponse";
-    const FORM_FIELD_NAME = "entry.1178796916";
-    const FORM_FIELD_DATE = "entry.1742102276";
-    const FORM_FIELD_DUTY = "entry.694160622";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxk_Vyvau86TDQVD1Z4MXEH-ySdTeaBuMUT3N08lc7ibE8gRGc9dXnyVkB3QIzJ9l_d/exec";
-
-    function pad(n) { return n < 10 ? '0' + n : n; }
-    function getDateYYYYMMDD(date) {
-      return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
-    }
-    function dateToDisplay(date) {
-      const d = new Date(date);
-      return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-    }
-    function getNextSaturday() {
-      let d = new Date();
-      let day = d.getDay();
-      let diff = (6 - day);
-      let nextSat = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
-      return nextSat;
-    }
-    function setDateLimits() {
-      let today = new Date();
-      let nextSat = getNextSaturday();
-      let minStr = getDateYYYYMMDD(today);
-      let maxDay = new Date(nextSat.getFullYear(), nextSat.getMonth(), nextSat.getDate() + 13);
-      let maxStr = getDateYYYYMMDD(maxDay);
-
-      document.getElementById('view-date').setAttribute('min', minStr);
-      document.getElementById('view-date').setAttribute('max', maxStr);
-    }
-    function setCurrentDate() {
-      let today = new Date();
-      document.getElementById('view-date').value = getDateYYYYMMDD(today);
-      showEntriesForDate(getDateYYYYMMDD(today));
-    }
-    setDateLimits();
-    setCurrentDate(); // Set initial date to today
-
-    // ---- Duty Dropdown Helper ----
-    function getDutyOptionsHtml(selectedValue) {
-      const duties = [];
-      for (let i = 1; i <= 10; i++) {
-        duties.push(`FW${i}E`);
-        duties.push(`FW${i}L`);
-      }
-      duties.push('SpareE');
-      duties.push('SpareL');
-      duties.push('RD');
-      duties.push('AH');
-      let html = '<option value="">(none)</option>';
-      for (const duty of duties) {
-        html += `<option value="${duty}" ${(selectedValue === duty) ? "selected" : ""}>${duty}</option>`;
-      }
-      return html;
-    }
-
-    // ------------ Load Duties Using Apps Script -----------------
-    async function loadEntries(dateStr) {
-      try {
-        const url = `${APPS_SCRIPT_URL}?date=${encodeURIComponent(dateStr)}`;
-        const response = await fetch(url, { mode: 'cors' });
-        if (!response.ok) throw new Error(`Network response was not ok. Status: ${response.status} ${response.statusText}`);
-        const data = await response.json();
-        console.log('Raw data from loadEntries:', data); // Debug log
-        return Array.isArray(data) ? data : [];
-      } catch (error) {
-        console.error('Error loading entries:', error.message);
-        return [];
-      }
-    }
-
-    // ---- Helper to Remove Duplicates ----
-    function removeDuplicateEntries(entries) {
-      const seen = new Map();
-      return entries.filter(entry => {
-        const key = `${entry.name.trim().toLowerCase()}:${entry.date.trim().toLowerCase()}:${entry.duty.trim().toLowerCase()}`;
-        if (!seen.has(key)) {
-          seen.set(key, true);
-          return true;
-        }
-        return false;
-      });
-    }
-
-    // ---- Show Entries for Date (Calls loadEntries) ----
-    async function showEntriesForDate(dateStr) {
-      const list = document.getElementById('dutyList');
-      list.innerHTML = '';
-      let entries = await loadEntries(dateStr);
-      
-      // Remove duplicates and log for debugging
-      entries = removeDuplicateEntries(entries);
-      console.log('Filtered entries for display:', entries); // Debug log
-
-      if (entries.length === 0) {
-        list.innerHTML = '<li>No duties recorded for this date.</li>';
-      } else {
-        entries.sort((a, b) => a.name.localeCompare(b.name));
-        entries.forEach(e => {
-          const li = document.createElement('li');
-          li.textContent = `${e.name}: ${e.duty}`;
-          list.appendChild(li);
-        });
-      }
-    }
-
-    document.getElementById('view-date').addEventListener('change', function() {
-      showEntriesForDate(this.value);
-    });
-
-    document.getElementById('refreshDuties').addEventListener('click', () => {
-      const dateInput = document.getElementById('view-date').value;
-      if (dateInput) {
-        showEntriesForDate(dateInput);
-      }
-    });
-
-    // ---- Month Selection Helper ----
-    function getMonthOptions() {
-      const today = new Date();
-      const currentYear = today.getFullYear();
-      const currentMonth = today.getMonth(); // 0-11
-      let options = [];
-      // Generate options for the past 12 months and next 12 months
-      for (let i = -12; i <= 12; i++) {
-        const date = new Date(currentYear, currentMonth + i, 1);
-        const year = date.getFullYear();
-        const month = date.getMonth(); // 0-11
-        const monthName = date.toLocaleString('en-GB', { month: 'long' });
-        const value = `${year}-${pad(month + 1)}`; // Format: YYYY-MM
-        options.push({ value, label: `${monthName} ${year}` });
-      }
-      return options;
-    }
-
-    function populateMonthDropdown(dropdownId, defaultValue) {
-      const dropdown = document.getElementById(dropdownId);
-      const options = getMonthOptions();
-      dropdown.innerHTML = '<option value="">Select a month…</option>';
-      options.forEach(opt => {
-        const option = document.createElement('option');
-        option.value = opt.value;
-        option.textContent = opt.label;
-        if (opt.value === defaultValue) {
-          option.selected = true;
-        }
-        dropdown.appendChild(option);
-      });
-    }
-
-    // ---- Bulk Form Logic (Updated for Full Month) ----
-    document.getElementById('showBulkDuty').addEventListener('click', function() {
-      showBulkForm();
-    });
-
-    function showBulkForm() {
-      let area = document.getElementById('bulkDutyFormArea');
-      let html = `
-      <div class="duty-bulk-form">
-        <label for="bulk-month">Select Month</label>
-        <select id="bulk-month"></select>
-        <div id="bulkDutyTable"></div>
-        <div class="actions" style="margin-top:17px;">
-          <button id="saveDuties" type="button">Save All Duties</button>
-          <button id="clearForm" type="button" style="margin-left:12px;background:#ff4444;color:#fff;">Clear Form</button>
-          <button id="cancelBulk" type="button" style="margin-left:12px;background:#bbb;color:#2c0078;">Cancel</button>
-        </div>
-        <div id="submitStatus" style="margin:7px 0 0 0;font-size:0.98em;"></div>
-      </div>
-      `;
-      area.innerHTML = html;
-
-      // Populate the month dropdown with the current month as default
-      const today = new Date();
-      const defaultMonth = `${today.getFullYear()}-${pad(today.getMonth() + 1)}`;
-      populateMonthDropdown('bulk-month', defaultMonth);
-
-      // Update the table when the month changes
-      document.getElementById('bulk-month').addEventListener('change', function() {
-        updateBulkDutyTable(this.value);
-      });
-
-      // Initial table population
-      updateBulkDutyTable(defaultMonth);
-
-      document.getElementById('cancelBulk').onclick = () => { area.innerHTML = ''; };
-
-      // Clear form button logic
-      document.getElementById('clearForm').onclick = () => {
-        document.getElementById('bulk-name').value = '';
-        const selects = document.querySelectorAll('#bulkDutyTable select');
-        selects.forEach(select => {
-          select.value = '';
-        });
-        document.getElementById('submitStatus').textContent = '';
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // ---------------- Firebase Initialization ----------------
+      const firebaseConfig = {
+        apiKey: "AIzaSyDdFpRnDajt4QGWXkkliyS5fbxwmF_uGTI",
+        authDomain: "quick-access-4ecd5.firebaseapp.com",
+        databaseURL: "https://quick-access-4ecd5-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "quick-access-4ecd5",
+        storageBucket: "quick-access-4ecd5.firebasestorage.app",
+        messagingSenderId: "666068072894",
+        appId: "1:666068072894:web:5b25db2dcd137bdb5c61ef"
       };
-    }
+      firebase.initializeApp(firebaseConfig);
+      const database = firebase.database();
 
-    async function updateBulkDutyTable(monthValue) {
-      if (!monthValue) {
-        document.getElementById('bulkDutyTable').innerHTML = '<p>Please select a month.</p>';
-        return;
+      // ---------------- Helper Function for Date Formatting ----------------
+      function pad(n) { return n < 10 ? '0' + n : n; }
+      function getDateYYYYMMDD(date) {
+        return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
       }
 
-      const [year, month] = monthValue.split('-').map(Number); // e.g., "2025-04" -> [2025, 4]
-      const startDate = new Date(year, month - 1, 1); // Month is 0-indexed in JS
-      const endDate = new Date(year, month, 0); // Last day of the month
-      const daysInMonth = endDate.getDate();
-      let days = [];
-
-      // Generate all dates in the month
-      for (let i = 1; i <= daysInMonth; i++) {
-        let d = new Date(year, month - 1, i);
-        days.push({
-          date: getDateYYYYMMDD(d),
-          display: dateToDisplay(d)
-        });
-      }
-
-      // Fetch existing duties for the entire month to prevent duplicates
-      let existingEntries = [];
-      for (const day of days) {
-        const entries = await loadEntries(day.date);
-        existingEntries = existingEntries.concat(entries);
-      }
-      existingEntries = removeDuplicateEntries(existingEntries);
-
-      // Build the table
-      let tableHtml = `
-        <label for="bulk-name" style="margin-top:12px;">Your Name</label>
-        <input type="text" id="bulk-name" maxlength="36" autocomplete="off" placeholder="e.g. Chris B" required>
-        <table>
-          <thead><tr><th>Date</th><th>Duty</th></tr></thead>
-          <tbody>
-      `;
-      days.forEach((d, i) => {
-        tableHtml += `
-          <tr>
-            <td><b>${d.display}</b><br><small>${d.date}</small></td>
-            <td>
-              <select id="bulk-duty-${i}">
-                ${getDutyOptionsHtml("")}
-              </select>
-            </td>
-          </tr>
-        `;
-      });
-      tableHtml += `
-          </tbody>
-        </table>
-      `;
-      document.getElementById('bulkDutyTable').innerHTML = tableHtml;
-
-      // Save duties
-      document.getElementById('saveDuties').onclick = async function() {
-        let name = document.getElementById('bulk-name').value.trim();
-        if (!name) {
-          alert('Please enter your name.');
-          return;
-        }
-        let newEntries = [];
-        for (let i = 0; i < days.length; i++) {
-          let dutySel = document.getElementById('bulk-duty-' + i);
-          let duty = dutySel.value;
-          if (duty) {
-            // Check if this entry already exists
-            const entryExists = existingEntries.some(
-              entry => entry.name.trim().toLowerCase() === name.toLowerCase() &&
-                       entry.date.trim().toLowerCase() === days[i].date.toLowerCase() &&
-                       entry.duty.trim().toLowerCase() === duty.toLowerCase()
-            );
-            if (!entryExists) {
-              newEntries.push({ name, date: days[i].date, duty });
-            }
-          }
-        }
-        if (newEntries.length === 0) {
-          alert("No new duties to save. All entered duties already exist or no duties were entered.");
-          return;
-        }
-
-        let submitStatus = document.getElementById('submitStatus');
-        submitStatus.textContent = "Submitting to rota sheet…";
-        submitStatus.style.color = "#836cf4";
-        let successCount = 0;
-        for (let entry of newEntries) {
-          const formData = new FormData();
-          formData.append(FORM_FIELD_NAME, entry.name);
-          formData.append(FORM_FIELD_DATE, entry.date);
-          formData.append(FORM_FIELD_DUTY, entry.duty);
-          try {
-            const response = await fetch(GOOGLE_FORM_URL, {
-              method: 'POST',
-              body: formData,
-              mode: 'no-cors'
-            });
-            successCount++;
-            // Add to existingEntries to prevent future duplicates
-            existingEntries.push(entry);
-          } catch (error) {
-            console.error('Error submitting duty:', error);
-            submitStatus.textContent = "❌ Error saving to rota sheet.";
-            submitStatus.style.color = "#d70a33";
-            return;
-          }
-        }
-        if (successCount === newEntries.length) {
-          submitStatus.textContent = "✅ Rota duties saved to rota sheet!";
-          submitStatus.style.color = "#44b261";
-          setTimeout(() => { document.getElementById('bulkDutyFormArea').innerHTML = ''; }, 1200);
-          let currView = document.getElementById('view-date').value;
-          if (currView && newEntries.some(en => en.date === currView)) {
-            showEntriesForDate(currView);
-          }
-        } else {
-          submitStatus.textContent = "❌ Some duties failed to save.";
-          submitStatus.style.color = "#d70a33";
-        }
-      };
-    }
-
-    // --------- Toilet Codes Logic -----------
-    const toiletCodesData = [
-      { location: "Acton Green", mainDoor: "7469", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Atkins Road", mainDoor: "5+4 2 1", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Belmont", mainDoor: "5603", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Bessborough Rd./Alton Rd.", mainDoor: "C8046X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Brentford County Court", mainDoor: "235", gents: "", ladies: "C1953X", keyLockBox: "" },
-      { location: "Brook Street", mainDoor: "5617", gents: "", ladies: "", keyLockBox: "Temporary toilet code: C1234Z" },
-      { location: "Cane Hill", mainDoor: "C4590X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Camberwell", mainDoor: "1403", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Chessington WOA", mainDoor: "", gents: "C1652Z", ladies: "C8925X", keyLockBox: "" },
-      { location: "Chiswick Business Park", mainDoor: "1+5 4", gents: "", ladies: "2314", keyLockBox: "" },
-      { location: "Clapham Junction", mainDoor: "2+4 1+5 3", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Cromwell Road", mainDoor: "B83790", gents: "4+2, 5, 3", ladies: "2+3, 4, 1", keyLockBox: "" },
-      { location: "East Acton, Telford Way", mainDoor: "", gents: "2471", ladies: "2947", keyLockBox: "" },
-      { location: "Ealing Taxi/Bus Stand", mainDoor: "5116", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Fairfield Bus Station", mainDoor: "5+3, 2, 1", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Fulwell Stanley Road", mainDoor: "1702", gents: "1702", ladies: "C6740Z", keyLockBox: "" },
-      { location: "Great West Quarter", mainDoor: "1+5, 1", gents: "", ladies: "1+2, 4, 3", keyLockBox: "" },
-      { location: "Ham", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Hammersmith Lower", mainDoor: "2+3, 5, 4, 1", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Harrow Bus Station", mainDoor: "C1209X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Kingston - Millennium House", mainDoor: "C1987", gents: "", ladies: "1987", keyLockBox: "" },
-      { location: "Lonsdale Road", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Manor Road", mainDoor: "1468Y", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Mitcham Fair Green", mainDoor: "", gents: "5+2 1 4", ladies: "", keyLockBox: "" },
-      { location: "Morden", mainDoor: "C3490X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Park Royal ASDA", mainDoor: "1048 / 1987", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Pollards Hill", mainDoor: "1203", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Putney Bridge", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Richmond Bus Station", mainDoor: "1+2, 3+5, 4", gents: "2512", ladies: "6113", keyLockBox: "Temp Toilet C3470" },
-      { location: "Roehampton Bus Station", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Southgate Toilet", mainDoor: "", gents: "", ladies: "C2581Y", keyLockBox: "" },
-      { location: "Staines Elmsleigh Centre", mainDoor: "7532", gents: "1473", ladies: "1473", keyLockBox: "Back door code 2704 driver give code on 25/03/2024" },
-      { location: "Sutton Hospital", mainDoor: "2+5 1", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Tolworth (Toby Way)", mainDoor: "C3460X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Tolworth Travel Lodge", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Tottenham Hale Bus Station Cabin", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Turnpike Lane", mainDoor: "2351X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Twickenham Albany", mainDoor: "", gents: "6912", ladies: "5831", keyLockBox: "" },
-      { location: "Wakefield Road", mainDoor: "", gents: "", ladies: "8205", keyLockBox: "" },
-      { location: "Waitrose Twickenham", mainDoor: "60369X", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Wallington", mainDoor: "2 5+3", gents: "", ladies: "2703", keyLockBox: "" }
-    ];
-
-    const toiletLocationDd = document.getElementById('toiletLocationDropdown');
-    const showToiletCodesBtn = document.getElementById('showToiletCodes');
-    const toiletCodesDisplay = document.getElementById('toiletCodesDisplay');
-
-    toiletLocationDd.addEventListener('change', () => {
-      showToiletCodesBtn.disabled = !toiletLocationDd.value;
-      toiletCodesDisplay.style.display = 'none'; // Hide display when changing selection
-    });
-
-    showToiletCodesBtn.addEventListener('click', () => {
-      const selectedLocation = toiletLocationDd.value;
-      if (!selectedLocation) return;
-
-      const locationData = toiletCodesData.find(item => item.location === selectedLocation);
-      if (!locationData) {
-        toiletCodesDisplay.innerHTML = '<p>No codes available for this location.</p>';
-        toiletCodesDisplay.style.display = 'block';
-        return;
-      }
-
-      let html = '';
-      if (locationData.mainDoor) html += `<p><strong>Main Door:</strong> ${locationData.mainDoor}</p>`;
-      if (locationData.gents) html += `<p><strong>Gents:</strong> ${locationData.gents}</p>`;
-      if (locationData.ladies) html += `<p><strong>Ladies:</strong> ${locationData.ladies}</p>`;
-      if (locationData.keyLockBox) html += `<p><strong>Key Lock Box:</strong> ${locationData.keyLockBox}</p>`;
-
-      toiletCodesDisplay.innerHTML = html || '<p>No codes available for this location.</p>';
-      toiletCodesDisplay.style.display = 'block';
-    });
-
-    // --------- Midnight Handover Logic -----------
-    const copyHandoverBtn = document.getElementById('copyHandoverText');
-    const handoverTextArea = document.getElementById('handoverText');
-
-    copyHandoverBtn.addEventListener('click', () => {
-      handoverTextArea.select();
-      try {
-        document.execCommand('copy');
-        copyHandoverBtn.textContent = 'Copied!';
-        copyHandoverBtn.style.background = '#44b261';
-        setTimeout(() => {
-          copyHandoverBtn.textContent = 'Copy to Clipboard';
-          copyHandoverBtn.style.background = '#ff44d0';
-        }, 2000);
-      } catch (err) {
-        console.error('Failed to copy text: ', err);
-        copyHandoverBtn.textContent = 'Copy Failed';
-        copyHandoverBtn.style.background = '#d70a33';
-      }
-    });
-
-    // --------- Route Info Logic -----------
-    const routeDd = document.getElementById('routeDropdown');
-    const routeInfoText = document.getElementById('routeInfo');
-    const saveRouteNoteBtn = document.getElementById('saveRouteNote');
-    const routeNotesList = document.getElementById('routeNotesList');
-    let editingNoteId = null; // Track if we're editing a note
-
-    // Enable/disable Save button based on input
-    function updateSaveButtonState() {
-      saveRouteNoteBtn.disabled = !(routeDd.value && routeInfoText.value.trim());
-    }
-    routeDd.addEventListener('change', updateSaveButtonState);
-    routeInfoText.addEventListener('input', updateSaveButtonState);
-
-    // Save or update a note to Firebase
-    saveRouteNoteBtn.addEventListener('click', () => {
-      const route = routeDd.value;
-      const info = routeInfoText.value.trim();
-      if (!route || !info) return;
-
-      const note = {
-        route: route,
-        info: info,
-        timestamp: Date.now()
-      };
-
-      if (editingNoteId) {
-        // Update existing note
-        database.ref('route-info/' + editingNoteId).update(note)
-          .then(() => {
-            resetForm();
-          })
-          .catch(error => {
-            console.error('Error updating note:', error);
-            saveRouteNoteBtn.textContent = 'Error';
-            saveRouteNoteBtn.style.background = '#d70a33';
-          });
-      } else {
-        // Save new note
-        database.ref('route-info').push(note)
-          .then(() => {
-            resetForm();
-          })
-          .catch(error => {
-            console.error('Error saving note:', error);
-            saveRouteNoteBtn.textContent = 'Error';
-            saveRouteNoteBtn.style.background = '#d70a33';
-          });
-      }
-    });
-
-    function resetForm() {
-      editingNoteId = null;
-      routeDd.value = '';
-      routeInfoText.value = '';
-      saveRouteNoteBtn.disabled = true;
-      saveRouteNoteBtn.textContent = 'Save Note';
-      saveRouteNoteBtn.style.background = '#ff44d0';
-    }
-
-    // Load and display notes from Firebase, filtered by selected route
-    function loadRouteNotes() {
-      let allNotes = []; // Store all notes to filter them dynamically
-
-      // Listen for changes in Firebase database
-      database.ref('route-info').on('value', (snapshot) => {
-        const notes = snapshot.val();
-        allNotes = notes ? Object.entries(notes).map(([id, note]) => ({ id, ...note })) : [];
-        renderNotes(); // Render notes initially based on current dropdown selection
-      });
-
-      // Function to render notes based on the selected route
-      function renderNotes() {
-        const selectedRoute = routeDd.value;
-        routeNotesList.innerHTML = '';
-
-        // Filter notes by the selected route (if a route is selected)
-        const filteredNotes = selectedRoute
-          ? allNotes.filter(note => note.route === selectedRoute)
-          : [];
-
-        if (filteredNotes.length === 0) {
-          routeNotesList.innerHTML = '<p>No route notes available for this route.</p>';
-          return;
-        }
-
-        // Sort by timestamp (newest first) and render
-        filteredNotes.sort((a, b) => b.timestamp - a.timestamp);
-        filteredNotes.forEach(note => {
-          const noteDiv = document.createElement('div');
-          noteDiv.className = 'route-note';
-          const date = new Date(note.timestamp);
-          noteDiv.innerHTML = `
-            <p><strong>Route ${note.route}:</strong> ${note.info}</p>
-            <p class="timestamp">Posted: ${date.toLocaleString()}</p>
-            <button class="edit-btn" data-id="${note.id}">Edit</button>
-            <button class="delete-btn" data-id="${note.id}">Delete</button>
-          `;
-          routeNotesList.appendChild(noteDiv);
-
-          // Add edit functionality
-          noteDiv.querySelector('.edit-btn').addEventListener('click', () => {
-            editingNoteId = note.id;
-            routeDd.value = note.route;
-            routeInfoText.value = note.info;
-            saveRouteNoteBtn.textContent = 'Update Note';
-            saveRouteNoteBtn.style.background = '#44b261';
-            updateSaveButtonState();
-          });
-
-          // Add delete functionality
-          noteDiv.querySelector('.delete-btn').addEventListener('click', () => {
-            database.ref('route-info/' + note.id).remove()
-              .catch(error => {
-                console.error('Error deleting note:', error);
-                alert('Failed to delete note.');
-              });
-          });
-        });
-      }
-
-      // Update notes whenever the route selection changes, but don't reset the form
-      routeDd.addEventListener('change', () => {
-        // Only clear the textarea and update button state, keep the dropdown selection
-        if (!editingNoteId) { // Don't clear if we're editing a note
-          routeInfoText.value = '';
-          updateSaveButtonState();
-        }
-        renderNotes();
-      });
-
-      // Reset the form when switching to the Route Info tab
+      // ---------------- Tab UI Logic ----------------
+      const tabs = document.querySelectorAll('.tab');
+      const tabContents = document.querySelectorAll('.tab-content');
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-          if (tab.dataset.tab === 'route-info') {
-            resetForm();
-            renderNotes();
+          tabs.forEach(t => t.classList.remove('active'));
+          tabContents.forEach(tc => tc.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+          if (tab.dataset.tab === 'roster') {
+            loadRotaData();
           }
         });
       });
-    }
-    loadRouteNotes();
 
-    // --------- Hidden Alarm Feature: Trigger at 18:30 Daily -----------
-    let lastAlarmDate = null;
+      // ------------ Quick Access Logic -------------
+      const siteDd = document.getElementById('websiteDropdown');
+      const openWebsiteBtn = document.getElementById('openWebsite');
+      siteDd.addEventListener('change', () => {
+        openWebsiteBtn.disabled = !siteDd.value;
+      });
+      openWebsiteBtn.addEventListener('click', () => {
+        if (siteDd.value) {
+          const link = document.createElement('a');
+          link.href = siteDd.value;
+          link.target = '_blank';
+          link.click();
+        }
+      });
 
-    function checkAlarm() {
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const currentDate = getDateYYYYMMDD(now);
+      const fileDd = document.getElementById('fileDropdown');
+      const openFileBtn = document.getElementById('openFile');
+      fileDd.addEventListener('change', () => {
+        openFileBtn.disabled = !fileDd.value;
+      });
+      openFileBtn.addEventListener('click', () => {
+        if (fileDd.value) {
+          const link = document.createElement('a');
+          link.href = fileDd.value;
+          link.download = '';
+          link.click();
+        }
+      });
 
-      // Check if it's 18:30 and we haven't triggered the alarm today
-      if (hours === 18 && minutes === 30 && lastAlarmDate !== currentDate) {
-        alert("MOVE YOUR CAR");
-        lastAlarmDate = currentDate; // Update the last alarm date to prevent multiple triggers
+      // --------- Rota Logic -----------
+      const rotaTable = document.getElementById('rotaTable');
+
+      async function loadRotaData() {
+        if (!rotaTable) {
+          console.error('Rota table element not found.');
+          return;
+        }
+
+        rotaTable.innerHTML = '<p>Loading rota data...</p>';
+        try {
+          // Fetch the Excel file from the server
+          const response = await fetch('files/New Rota.xlsx');
+          if (!response.ok) throw new Error('Failed to fetch rota file.');
+
+          const arrayBuffer = await response.arrayBuffer();
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+          // Select the most recent sheet based on date in the name (WC DD.MM.YY)
+          const sheetNames = workbook.SheetNames;
+          const mostRecentSheet = selectMostRecentSheet(sheetNames);
+          if (!mostRecentSheet) {
+            throw new Error('No valid sheets found in the rota file.');
+          }
+
+          const sheet = workbook.Sheets[mostRecentSheet];
+          const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+          displayRota(rawData);
+        } catch (err) {
+          console.error('Error loading rota data:', err);
+          rotaTable.innerHTML = '<p style="color: #d70a33;">Error: Unable to load rota data. Please try again later.</p>';
+        }
       }
-    }
 
-    // Check the time every minute (60,000 milliseconds)
-    setInterval(checkAlarm, 60000);
+      function selectMostRecentSheet(sheetNames) {
+        let latestSheet = null;
+        let latestDate = null;
 
-    // Run the check immediately in case the app is opened exactly at 18:30
-    checkAlarm();
+        sheetNames.forEach(sheetName => {
+          // Match sheet names in the format "WC DD.MM.YY"
+          const match = sheetName.match(/WC (\d{2})\.(\d{2})\.(\d{2})/);
+          if (match) {
+            const day = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10) - 1; // JavaScript months are 0-based
+            const year = 2000 + parseInt(match[3], 10); // Convert YY to YYYY
+            const sheetDate = new Date(year, month, day);
+
+            if (!latestDate || sheetDate > latestDate) {
+              latestDate = sheetDate;
+              latestSheet = sheetName;
+            }
+          }
+        });
+
+        return latestSheet;
+      }
+
+      function formatFractionToTime(fraction) {
+        if (typeof fraction !== 'number' || fraction < 0 || fraction > 1) return fraction;
+
+        const totalMinutes = Math.round(fraction * 24 * 60);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return `${pad(hours)}:${pad(minutes)}`;
+      }
+
+      function displayRota(rawData) {
+        if (!rotaTable) {
+          console.error('Rota table element not found.');
+          return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'rota-table';
+
+        // Assuming the first row contains headers
+        const headers = ['Duty', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Driver'];
+        const headerRow = document.createElement('tr');
+        headers.forEach(headerText => {
+          const th = document.createElement('th');
+          th.textContent = headerText;
+          headerRow.appendChild(th);
+        });
+        table.appendChild(headerRow);
+
+        // Process data starting from the second row (skip header)
+        let dataRows = [];
+        for (let i = 1; i < rawData.length; i++) {
+          const row = rawData[i];
+          if (row.length >= 8) { // Ensure row has enough columns
+            dataRows.push(row);
+          }
+        }
+
+        // Display the rows
+        dataRows.forEach(row => {
+          const tr = document.createElement('tr');
+          const duty = row[0] || 'N/A';
+          const sat = formatFractionToTime(row[1]) || 'N/A';
+          const sun = formatFractionToTime(row[2]) || 'N/A';
+          const mon = formatFractionToTime(row[3]) || 'N/A';
+          const tue = formatFractionToTime(row[4]) || 'N/A';
+          const wed = formatFractionToTime(row[5]) || 'N/A';
+          const thu = formatFractionToTime(row[6]) || 'N/A';
+          const fri = formatFractionToTime(row[7]) || 'N/A';
+          const driver = row[8] || 'N/A';
+
+          [duty, sat, sun, mon, tue, wed, thu, fri, driver].forEach(cellData => {
+            const td = document.createElement('td');
+            td.textContent = cellData;
+            tr.appendChild(td);
+          });
+          table.appendChild(tr);
+        });
+
+        rotaTable.innerHTML = '';
+        if (dataRows.length === 0) {
+          rotaTable.innerHTML = '<p>No rota data available for this week.</p>';
+        } else {
+          rotaTable.appendChild(table);
+        }
+      }
+
+      // --------- Toilet Codes Logic -----------
+      const toiletCodesData = [
+        { location: "Acton Green", mainDoor: "7469", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Atkins Road", mainDoor: "5+4 2 1", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Belmont", mainDoor: "5603", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Bessborough Rd./Alton Rd.", mainDoor: "C8046X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Brentford County Court", mainDoor: "235", gents: "", ladies: "C1953X", keyLockBox: "" },
+        { location: "Brook Street", mainDoor: "5617", gents: "", ladies: "", keyLockBox: "Temporary toilet code: C1234Z" },
+        { location: "Cane Hill", mainDoor: "C4590X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Camberwell", mainDoor: "1403", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Chessington WOA", mainDoor: "", gents: "C1652Z", ladies: "C8925X", keyLockBox: "" },
+        { location: "Chiswick Business Park", mainDoor: "1+5 4", gents: "", ladies: "2314", keyLockBox: "" },
+        { location: "Clapham Junction", mainDoor: "2+4 1+5 3", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Cromwell Road", mainDoor: "B83790", gents: "4+2, 5, 3", ladies: "2+3, 4, 1", keyLockBox: "" },
+        { location: "East Acton, Telford Way", mainDoor: "", gents: "2471", ladies: "2947", keyLockBox: "" },
+        { location: "Ealing Taxi/Bus Stand", mainDoor: "5116", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Fairfield Bus Station", mainDoor: "5+3, 2, 1", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Fulwell Stanley Road", mainDoor: "1702", gents: "1702", ladies: "C6740Z", keyLockBox: "" },
+        { location: "Great West Quarter", mainDoor: "1+5, 1", gents: "", ladies: "1+2, 4, 3", keyLockBox: "" },
+        { location: "Ham", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Hammersmith Lower", mainDoor: "2+3, 5, 4, 1", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Harrow Bus Station", mainDoor: "C1209X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Kingston - Millennium House", mainDoor: "C1987", gents: "", ladies: "1987", keyLockBox: "" },
+        { location: "Lonsdale Road", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Manor Road", mainDoor: "1468Y", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Mitcham Fair Green", mainDoor: "", gents: "5+2 1 4", ladies: "", keyLockBox: "" },
+        { location: "Morden", mainDoor: "C3490X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Park Royal ASDA", mainDoor: "1048 / 1987", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Pollards Hill", mainDoor: "1203", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Putney Bridge", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Richmond Bus Station", mainDoor: "1+2, 3+5, 4", gents: "2512", ladies: "6113", keyLockBox: "Temp Toilet C3470" },
+        { location: "Roehampton Bus Station", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Southgate Toilet", mainDoor: "", gents: "", ladies: "C2581Y", keyLockBox: "" },
+        { location: "Staines Elmsleigh Centre", mainDoor: "7532", gents: "1473", ladies: "1473", keyLockBox: "Back door code 2704 driver give code on 25/03/2024" },
+        { location: "Sutton Hospital", mainDoor: "2+5 1", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Tolworth (Toby Way)", mainDoor: "C3460X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Tolworth Travel Lodge", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Tottenham Hale Bus Station Cabin", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Turnpike Lane", mainDoor: "2351X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Twickenham Albany", mainDoor: "", gents: "6912", ladies: "5831", keyLockBox: "" },
+        { location: "Wakefield Road", mainDoor: "", gents: "", ladies: "8205", keyLockBox: "" },
+        { location: "Waitrose Twickenham", mainDoor: "60369X", gents: "", ladies: "", keyLockBox: "" },
+        { location: "Wallington", mainDoor: "2 5+3", gents: "", ladies: "2703", keyLockBox: "" }
+      ];
+
+      const toiletLocationDd = document.getElementById('toiletLocationDropdown');
+      const showToiletCodesBtn = document.getElementById('showToiletCodes');
+      const toiletCodesDisplay = document.getElementById('toiletCodesDisplay');
+
+      toiletLocationDd.addEventListener('change', () => {
+        showToiletCodesBtn.disabled = !toiletLocationDd.value;
+        toiletCodesDisplay.style.display = 'none'; // Hide display when changing selection
+      });
+
+      showToiletCodesBtn.addEventListener('click', () => {
+        const selectedLocation = toiletLocationDd.value;
+        if (!selectedLocation) return;
+
+        const locationData = toiletCodesData.find(item => item.location === selectedLocation);
+        if (!locationData) {
+          toiletCodesDisplay.innerHTML = '<p>No codes available for this location.</p>';
+          toiletCodesDisplay.style.display = 'block';
+          return;
+        }
+
+        let html = '';
+        if (locationData.mainDoor) html += `<p><strong>Main Door:</strong> ${locationData.mainDoor}</p>`;
+        if (locationData.gents) html += `<p><strong>Gents:</strong> ${locationData.gents}</p>`;
+        if (locationData.ladies) html += `<p><strong>Ladies:</strong> ${locationData.ladies}</p>`;
+        if (locationData.keyLockBox) html += `<p><strong>Key Lock Box:</strong> ${locationData.keyLockBox}</p>`;
+
+        toiletCodesDisplay.innerHTML = html || '<p>No codes available for this location.</p>';
+        toiletCodesDisplay.style.display = 'block';
+      });
+
+      // --------- Midnight Handover Logic -----------
+      const copyHandoverBtn = document.getElementById('copyHandoverText');
+      const handoverTextArea = document.getElementById('handoverText');
+
+      copyHandoverBtn.addEventListener('click', () => {
+        handoverTextArea.select();
+        try {
+          document.execCommand('copy');
+          copyHandoverBtn.textContent = 'Copied!';
+          copyHandoverBtn.style.background = '#44b261';
+          setTimeout(() => {
+            copyHandoverBtn.textContent = 'Copy to Clipboard';
+            copyHandoverBtn.style.background = '#ff44d0';
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy text: ', err);
+          copyHandoverBtn.textContent = 'Copy Failed';
+          copyHandoverBtn.style.background = '#d70a33';
+        }
+      });
+
+      // --------- Route Info Logic -----------
+      const routeDd = document.getElementById('routeDropdown');
+      const routeInfoText = document.getElementById('routeInfo');
+      const saveRouteNoteBtn = document.getElementById('saveRouteNote');
+      const routeNotesList = document.getElementById('routeNotesList');
+      let editingNoteId = null; // Track if we're editing a note
+
+      // Enable/disable Save button based on input
+      function updateSaveButtonState() {
+        saveRouteNoteBtn.disabled = !(routeDd.value && routeInfoText.value.trim());
+      }
+      routeDd.addEventListener('change', updateSaveButtonState);
+      routeInfoText.addEventListener('input', updateSaveButtonState);
+
+      // Save or update a note to Firebase
+      saveRouteNoteBtn.addEventListener('click', () => {
+        const route = routeDd.value;
+        const info = routeInfoText.value.trim();
+        if (!route || !info) return;
+
+        const note = {
+          route: route,
+          info: info,
+          timestamp: Date.now()
+        };
+
+        if (editingNoteId) {
+          // Update existing note
+          database.ref('route-info/' + editingNoteId).update(note)
+            .then(() => {
+              resetForm();
+            })
+            .catch(error => {
+              console.error('Error updating note:', error);
+              saveRouteNoteBtn.textContent = 'Error';
+              saveRouteNoteBtn.style.background = '#d70a33';
+            });
+        } else {
+          // Save new note
+          database.ref('route-info').push(note)
+            .then(() => {
+              resetForm();
+            })
+            .catch(error => {
+              console.error('Error saving note:', error);
+              saveRouteNoteBtn.textContent = 'Error';
+              saveRouteNoteBtn.style.background = '#d70a33';
+            });
+        }
+      });
+
+      function resetForm() {
+        editingNoteId = null;
+        routeDd.value = '';
+        routeInfoText.value = '';
+        saveRouteNoteBtn.disabled = true;
+        saveRouteNoteBtn.textContent = 'Save Note';
+        saveRouteNoteBtn.style.background = '#ff44d0';
+      }
+
+      // Load and display notes from Firebase, filtered by selected route
+      function loadRouteNotes() {
+        let allNotes = []; // Store all notes to filter them dynamically
+
+        // Listen for changes in Firebase database
+        database.ref('route-info').on('value', (snapshot) => {
+          const notes = snapshot.val();
+          allNotes = notes ? Object.entries(notes).map(([id, note]) => ({ id, ...note })) : [];
+          renderNotes(); // Render notes initially based on current dropdown selection
+        });
+
+        // Function to render notes based on the selected route
+        function renderNotes() {
+          const selectedRoute = routeDd.value;
+          routeNotesList.innerHTML = '';
+
+          // Filter notes by the selected route (if a route is selected)
+          const filteredNotes = selectedRoute
+            ? allNotes.filter(note => note.route === selectedRoute)
+            : [];
+
+          if (filteredNotes.length === 0) {
+            routeNotesList.innerHTML = '<p>No route notes available for this route.</p>';
+            return;
+          }
+
+          // Sort by timestamp (newest first) and render
+          filteredNotes.sort((a, b) => b.timestamp - a.timestamp);
+          filteredNotes.forEach(note => {
+            const noteDiv = document.createElement('div');
+            noteDiv.className = 'route-note';
+            const date = new Date(note.timestamp);
+            noteDiv.innerHTML = `
+              <p><strong>Route ${note.route}:</strong> ${note.info}</p>
+              <p class="timestamp">Posted: ${date.toLocaleString()}</p>
+              <button class="edit-btn" data-id="${note.id}">Edit</button>
+              <button class="delete-btn" data-id="${note.id}">Delete</button>
+            `;
+            routeNotesList.appendChild(noteDiv);
+
+            // Add edit functionality
+            noteDiv.querySelector('.edit-btn').addEventListener('click', () => {
+              editingNoteId = note.id;
+              routeDd.value = note.route;
+              routeInfoText.value = note.info;
+              saveRouteNoteBtn.textContent = 'Update Note';
+              saveRouteNoteBtn.style.background = '#44b261';
+              updateSaveButtonState();
+            });
+
+            // Add delete functionality
+            noteDiv.querySelector('.delete-btn').addEventListener('click', () => {
+              database.ref('route-info/' + note.id).remove()
+                .catch(error => {
+                  console.error('Error deleting note:', error);
+                  alert('Failed to delete note.');
+                });
+            });
+          });
+        }
+
+        // Update notes whenever the route selection changes, but don't reset the form
+        routeDd.addEventListener('change', () => {
+          // Only clear the textarea and update button state, keep the dropdown selection
+          if (!editingNoteId) { // Don't clear if we're editing a note
+            routeInfoText.value = '';
+            updateSaveButtonState();
+          }
+          renderNotes();
+        });
+
+        // Reset the form when switching to the Route Info tab
+        tabs.forEach(tab => {
+          tab.addEventListener('click', () => {
+            if (tab.dataset.tab === 'route-info') {
+              resetForm();
+              renderNotes();
+            }
+          });
+        });
+      }
+      loadRouteNotes();
+
+      // --------- Hidden Alarm Feature: Trigger at 18:30 Daily -----------
+      let lastAlarmDate = null;
+
+      function checkAlarm() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const currentDate = getDateYYYYMMDD(now);
+
+        // Check if it's 18:30 and we haven't triggered the alarm today
+        if (hours === 18 && minutes === 30 && lastAlarmDate !== currentDate) {
+          alert("MOVE YOUR CAR");
+          lastAlarmDate = currentDate; // Update the last alarm date to prevent multiple triggers
+        }
+      }
+
+      // Check the time every minute (60,000 milliseconds)
+      setInterval(checkAlarm, 60000);
+
+      // Run the check immediately in case the app is opened exactly at 18:30
+      checkAlarm();
+
+      // Load rota data if on Rota tab
+      if (document.querySelector('.tab.active').dataset.tab === 'roster') {
+        loadRotaData();
+      }
+    });
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9395e158f959678a',t:'MTc0NjE3MTcyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
