@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Forcing GitHub Pages redeploy to clear cache: 2025-05-02 16:00 BST -->
+<!-- Forcing GitHub Pages redeploy to clear cache: 2025-05-02 18:00 BST -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -408,7 +408,7 @@ Events taking place/due to take place: </textarea>
           <option value="110">110</option>
           <option value="116">116</option>
           <option value="117">117</option>
-          <option value="203">203</option>
+           <option value="203">203</option>
           <option value="216">216</option>
           <option value="235">235</option>
           <option value="281">281</option>
@@ -574,25 +574,19 @@ Events taking place/due to take place: </textarea>
         return latestSheet;
       }
 
-      function formatTime(value) {
-        if (typeof value === 'string') {
-          return value.trim() || 'N/A';
-        }
-        if (typeof value === 'number' && value >= 0 && value <= 1) {
-          const totalMinutes = Math.round(value * 24 * 60);
-          const hours = Math.floor(totalMinutes / 60);
-          const minutes = totalMinutes % 60;
-          return `${pad(hours)}:${pad(minutes)}`;
-        }
-        return 'N/A';
+      function extractDutyCode(value) {
+        if (!value || typeof value !== 'string') return 'N/A';
+        // Split the cell value by space and take the first part (the duty code)
+        const parts = value.trim().split(' ');
+        return parts[0] || 'N/A';
       }
 
       function populateControllerDropdown(rawData) {
         const controllers = new Set();
         for (let i = 1; i < rawData.length; i++) {
           const row = rawData[i];
-          if (row.length > 7) {
-            const controller = row[7] || row[8];
+          if (row && row.length > 4) {
+            const controller = row[4]; // Controller name is in Column E (index 4)
             if (controller && typeof controller === 'string' && controller.trim() !== '') {
               controllers.add(controller.trim());
             }
@@ -617,6 +611,7 @@ Events taking place/due to take place: </textarea>
         const table = document.createElement('table');
         table.className = 'rota-table';
 
+        // Use static headers for the days of the week
         const headers = ['Duty', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
         const headerRow = document.createElement('tr');
         headers.forEach(headerText => {
@@ -626,26 +621,33 @@ Events taking place/due to take place: </textarea>
         });
         table.appendChild(headerRow);
 
+        // Process data starting from row 1 (index 1)
         let dataRows = [];
         for (let i = 1; i < rawData.length; i++) {
           const row = rawData[i];
-          if (row.length >= 8) {
-            const duty = row[0] || 'N/A';
-            const sat = formatTime(row[1]);
-            const sun = formatTime(row[2]);
-            const mon = formatTime(row[3]);
-            const tue = formatTime(row[4]);
-            const wed = formatTime(row[5]);
-            const thu = formatTime(row[6]);
-            const fri = formatTime(row[7]);
-            const controller = row[8] || row[7] || 'N/A';
-            dataRows.push({ duty, sat, sun, mon, tue, wed, thu, fri, controller });
-          }
+          if (!row || row.length < 12) continue; // Ensure row has enough columns
+
+          // Controller name is in Column E (index 4)
+          const controller = row[4] || 'N/A';
+          if (controller === 'N/A') continue; // Skip rows without a controller name
+
+          // Duties are in Columns F to L (indices 5 to 11)
+          const sat = extractDutyCode(row[5]);
+          const sun = extractDutyCode(row[6]);
+          const mon = extractDutyCode(row[7]);
+          const tue = extractDutyCode(row[8]);
+          const wed = extractDutyCode(row[9]);
+          const thu = extractDutyCode(row[10]);
+          const fri = extractDutyCode(row[11]);
+
+          dataRows.push({ duty: controller, sat, sun, mon, tue, wed, thu, fri, controller });
         }
 
+        // Filter by selected controller
         const selectedController = controllerSelect.value;
         let filteredRows = selectedController ? dataRows.filter(row => row.controller === selectedController) : dataRows;
 
+        // Display the filtered rows
         filteredRows.forEach(row => {
           const tr = document.createElement('tr');
           [row.duty, row.sat, row.sun, row.mon, row.tue, row.wed, row.thu, row.fri].forEach(cellData => {
