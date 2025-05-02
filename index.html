@@ -565,18 +565,17 @@ Events taking place/due to take place: </textarea>
           const workbook = XLSX.read(arrayBuffer, { type: 'array', raw: true });
 
           const sheetNames = workbook.SheetNames;
-          console.log('Available sheets:', sheetNames); // Debug: Log sheet names
+          console.log('Available sheets:', sheetNames);
           const currentSheet = selectCurrentWeekSheet(sheetNames);
           if (!currentSheet) {
             throw new Error('No sheet found for the current week.');
           }
-          console.log('Selected sheet:', currentSheet); // Debug: Log selected sheet
+          console.log('Selected sheet:', currentSheet);
 
           const sheet = workbook.Sheets[currentSheet];
           const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, blankrows: false });
-          console.log('Raw data:', rawData); // Debug: Log the raw data
+          console.log('Raw data:', rawData);
 
-          // Validate rawData structure
           if (!rawData || rawData.length < 2) {
             throw new Error('Excel sheet is empty or does not contain enough rows.');
           }
@@ -590,7 +589,7 @@ Events taking place/due to take place: </textarea>
       }
 
       function selectCurrentWeekSheet(sheetNames) {
-        const today = new Date(2025, 4, 2); // May 2, 2025
+        const today = new Date(2025, 4, 2);
         let selectedSheet = null;
 
         sheetNames.forEach(sheetName => {
@@ -642,12 +641,12 @@ Events taking place/due to take place: </textarea>
         for (let i = 1; i < rawData.length; i++) {
           const row = rawData[i];
           if (!row || row.length < 5) continue;
-          const controller = row[4];
+          const controller = row[4]; // Column E (index 4)
           if (controller && typeof controller === 'string' && controller.trim() !== '') {
             controllers.add(controller.trim());
           }
         }
-        console.log('Controllers found:', controllers); // Debug: Log controllers
+        console.log('Controllers found:', controllers);
         controllerSelect.innerHTML = '<option value="">All Controllers</option>';
         controllers.forEach(controller => {
           const option = document.createElement('option');
@@ -669,7 +668,7 @@ Events taking place/due to take place: </textarea>
 
         // Extract dynamic headers from Row 1 (indices 5 to 11)
         const dateRow = rawData[0] || [];
-        console.log('Header row (dates):', dateRow); // Debug: Log header row
+        console.log('Header row (dates):', dateRow);
         const dates = [];
         for (let i = 5; i <= 11; i++) {
           dates.push(dateRow[i] || 'Unknown');
@@ -703,9 +702,10 @@ Events taking place/due to take place: </textarea>
           const row = rawData[i];
           if (!row || row.length < 5) continue;
 
-          const controller = row[4] ? String(row[4]).trim() : '-';
+          const controller = row[4] ? String(row[4]).trim() : '-'; // Column E (index 4)
           if (controller === '-') continue;
 
+          // Extract duties from Columns F to L (indices 5 to 11)
           const sat = extractDutyCode(row[5]);
           const sun = extractDutyCode(row[6]);
           const mon = extractDutyCode(row[7]);
@@ -714,7 +714,7 @@ Events taking place/due to take place: </textarea>
           const thu = extractDutyCode(row[10]);
           const fri = extractDutyCode(row[11]);
 
-          console.log(`Row ${i}: Controller=${controller}, Duties=[${sat}, ${sun}, ${mon}, ${tue}, ${wed}, ${thu}, ${fri}]`); // Debug: Log each row
+          console.log(`Row ${i}: Controller=${controller}, Duties=[${sat}, ${sun}, ${mon}, ${tue}, ${wed}, ${thu}, ${fri}]`);
 
           dataRows.push({ duty: controller, sat, sun, mon, tue, wed, thu, fri, controller });
         }
@@ -726,6 +726,7 @@ Events taking place/due to take place: </textarea>
         // Display the filtered rows
         filteredRows.forEach(row => {
           const tr = document.createElement('tr');
+          // Only include the duty (controller name) and the 7 duty columns
           [row.duty, row.sat, row.sun, row.mon, row.tue, row.wed, row.thu, row.fri].forEach(cellData => {
             const td = document.createElement('td');
             td.textContent = cellData;
