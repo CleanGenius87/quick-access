@@ -478,11 +478,10 @@ Events taking place/due to take place: </textarea>
       // Parse dates like "SAT 26TH April" to Date objects
       function parseExcelDate(dateStr, assumedYear = 2025) {
         if (!dateStr || typeof dateStr !== 'string') return null;
-        // Example: "SAT 26TH April" -> "26TH April"
         const parts = dateStr.split(' ');
         if (parts.length < 3) return null;
-        const dayStr = parts[1].replace(/TH|ST|ND|RD/, ''); // "26TH" -> "26"
-        const monthStr = parts[2]; // "April"
+        const dayStr = parts[1].replace(/TH|ST|ND|RD/, '');
+        const monthStr = parts[2];
         const monthNames = {
           'January': 0, 'February': 1, 'March': 2, 'April': 3, 'May': 4, 'June': 5,
           'July': 6, 'August': 7, 'September': 8, 'October': 9, 'November': 10, 'December': 11
@@ -498,7 +497,7 @@ Events taking place/due to take place: </textarea>
         if (!dateStr || typeof dateStr !== 'string') return 'Unknown';
         const parts = dateStr.split(' ');
         if (parts.length < 3) return dateStr;
-        return `${parts[1]} ${parts[2]}`; // "26TH April"
+        return `${parts[1]} ${parts[2]}`;
       }
 
       // ---------------- Tab UI Logic ----------------
@@ -563,16 +562,24 @@ Events taking place/due to take place: </textarea>
           }
 
           const arrayBuffer = await response.arrayBuffer();
-          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          const workbook = XLSX.read(arrayBuffer, { type: 'array', raw: true });
 
           const sheetNames = workbook.SheetNames;
+          console.log('Available sheets:', sheetNames); // Debug: Log sheet names
           const currentSheet = selectCurrentWeekSheet(sheetNames);
           if (!currentSheet) {
             throw new Error('No sheet found for the current week.');
           }
+          console.log('Selected sheet:', currentSheet); // Debug: Log selected sheet
 
           const sheet = workbook.Sheets[currentSheet];
-          const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, blankrows: false });
+          console.log('Raw data:', rawData); // Debug: Log the raw data
+
+          // Validate rawData structure
+          if (!rawData || rawData.length < 2) {
+            throw new Error('Excel sheet is empty or does not contain enough rows.');
+          }
 
           displayRota(rawData);
           populateControllerDropdown(rawData);
@@ -590,22 +597,18 @@ Events taking place/due to take place: </textarea>
           const match = sheetName.match(/WC (\d{2})\.(\d{2})\.(\d{2})/);
           if (match) {
             const day = parseInt(match[1], 10);
-            const month = parseInt(match[2], 10) - 1; // Months are 0-based
+            const month = parseInt(match[2], 10) - 1;
             const year = 2000 + parseInt(match[3], 10);
-            const monday = new Date(year, month, day); // Monday of the week
-
-            // Calculate Sunday of the week (6 days after Monday)
+            const monday = new Date(year, month, day);
             const sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6);
 
-            // Check if today falls within this week (Monday to Sunday)
             if (today >= monday && today <= sunday) {
               selectedSheet = sheetName;
             }
           }
         });
 
-        // If no sheet matches the current week, fall back to the most recent sheet
         if (!selectedSheet) {
           let latestDate = null;
           sheetNames.forEach(sheetName => {
@@ -638,12 +641,13 @@ Events taking place/due to take place: </textarea>
         const controllers = new Set();
         for (let i = 1; i < rawData.length; i++) {
           const row = rawData[i];
-          if (!row || row.length < 5) continue; // Need at least Column E (index 4)
-          const controller = row[4]; // Controller name in Column E
+          if (!row || row.length < 5) continue;
+          const controller = row[4];
           if (controller && typeof controller === 'string' && controller.trim() !== '') {
             controllers.add(controller.trim());
           }
         }
+        console.log('Controllers found:', controllers); // Debug: Log controllers
         controllerSelect.innerHTML = '<option value="">All Controllers</option>';
         controllers.forEach(controller => {
           const option = document.createElement('option');
@@ -665,6 +669,7 @@ Events taking place/due to take place: </textarea>
 
         // Extract dynamic headers from Row 1 (indices 5 to 11)
         const dateRow = rawData[0] || [];
+        console.log('Header row (dates):', dateRow); // Debug: Log header row
         const dates = [];
         for (let i = 5; i <= 11; i++) {
           dates.push(dateRow[i] || 'Unknown');
@@ -672,7 +677,7 @@ Events taking place/due to take place: </textarea>
 
         // Parse dates for highlighting the current date
         const parsedDates = dates.map(dateStr => parseExcelDate(dateStr, 2025));
-        const today = new Date(2025, 4, 2); // May 2, 2025
+        const today = new Date(2025, 4, 2);
         const todayStr = getDateYYYYMMDD(today);
 
         // Create headers
@@ -681,7 +686,6 @@ Events taking place/due to take place: </textarea>
         headers.forEach((headerText, index) => {
           const th = document.createElement('th');
           th.textContent = headerText;
-          // Highlight the current date column (skip the first column "Duty")
           if (index > 0) {
             const dateIndex = index - 1;
             const date = parsedDates[dateIndex];
@@ -697,10 +701,10 @@ Events taking place/due to take place: </textarea>
         let dataRows = [];
         for (let i = 1; i < rawData.length; i++) {
           const row = rawData[i];
-          if (!row || row.length < 5) continue; // Need at least Column E (index 4)
+          if (!row || row.length < 5) continue;
 
           const controller = row[4] ? String(row[4]).trim() : '-';
-          if (controller === '-') continue; // Skip rows without a controller name
+          if (controller === '-') continue;
 
           const sat = extractDutyCode(row[5]);
           const sun = extractDutyCode(row[6]);
@@ -709,6 +713,8 @@ Events taking place/due to take place: </textarea>
           const wed = extractDutyCode(row[9]);
           const thu = extractDutyCode(row[10]);
           const fri = extractDutyCode(row[11]);
+
+          console.log(`Row ${i}: Controller=${controller}, Duties=[${sat}, ${sun}, ${mon}, ${tue}, ${wed}, ${thu}, ${fri}]`); // Debug: Log each row
 
           dataRows.push({ duty: controller, sat, sun, mon, tue, wed, thu, fri, controller });
         }
