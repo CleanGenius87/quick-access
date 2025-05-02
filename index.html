@@ -545,7 +545,9 @@ Events taking place/due to take place: </textarea>
         const url = `${APPS_SCRIPT_URL}?date=${encodeURIComponent(dateStr)}`;
         const response = await fetch(url, { mode: 'cors' });
         if (!response.ok) throw new Error(`Network response was not ok. Status: ${response.status} ${response.statusText}`);
-        return await response.json();
+        const data = await response.json();
+        console.log('Raw data from loadEntries:', data); // Debug log
+        return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('Error loading entries:', error.message);
         return [];
@@ -554,11 +556,11 @@ Events taking place/due to take place: </textarea>
 
     // ---- Helper to Remove Duplicates ----
     function removeDuplicateEntries(entries) {
-      const seen = new Set();
+      const seen = new Map();
       return entries.filter(entry => {
-        const key = `${entry.name}:${entry.date}:${entry.duty}`;
+        const key = `${entry.name.trim().toLowerCase()}:${entry.date.trim().toLowerCase()}:${entry.duty.trim().toLowerCase()}`;
         if (!seen.has(key)) {
-          seen.add(key);
+          seen.set(key, true);
           return true;
         }
         return false;
@@ -571,8 +573,9 @@ Events taking place/due to take place: </textarea>
       list.innerHTML = '';
       let entries = await loadEntries(dateStr);
       
-      // Remove duplicates
+      // Remove duplicates and log for debugging
       entries = removeDuplicateEntries(entries);
+      console.log('Filtered entries for display:', entries); // Debug log
 
       if (entries.length === 0) {
         list.innerHTML = '<li>No duties recorded for this date.</li>';
@@ -747,7 +750,9 @@ Events taking place/due to take place: </textarea>
           if (duty) {
             // Check if this entry already exists
             const entryExists = existingEntries.some(
-              entry => entry.name === name && entry.date === days[i].date && entry.duty === duty
+              entry => entry.name.trim().toLowerCase() === name.toLowerCase() &&
+                       entry.date.trim().toLowerCase() === days[i].date.toLowerCase() &&
+                       entry.duty.trim().toLowerCase() === duty.toLowerCase()
             );
             if (!entryExists) {
               newEntries.push({ name, date: days[i].date, duty });
