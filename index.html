@@ -1,18 +1,15 @@
 <!DOCTYPE html>
-<!-- Forcing GitHub Pages redeploy to clear cache: 2025-05-03 12:00 BST -->
+<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-29 22:00 BST -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>First Bus Quick Access & Rota</title>
+  <title>First Bus Quick Access & Duty Roster</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <!-- React and Babel for the rota table -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <!-- Including PapaParse for CSV parsing -->
+  <script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
   <style>
     body {
       background: #2c0078;
@@ -39,7 +36,7 @@
     .tab-content.active { display: block; }
     .dropdown-section, .duty-form-section { width: 100%; margin-bottom: 24px; }
     label { font-weight: bold; margin-bottom: 8px; display: block; font-size: 1.05rem; color: #2c0078;}
-    input[type="date"], select, input[type="text"], textarea {
+    select, input[type="text"], input[type="date"], textarea {
       width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
       margin-bottom: 6px; background: #faf7ff; color: #2c0078; font-family: 'Montserrat', Arial, sans-serif;
     }
@@ -80,10 +77,15 @@
     .route-note .delete-btn { background: #ff4444; color: #fff; }
     .route-note .edit-btn { background: #44b261; color: #fff; }
     .route-note .timestamp { font-size: 0.85rem; color: #666; }
-    .rota-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #ede7fd; border-radius: 6px; }
-    .rota-table th, .rota-table td { border-bottom: 1px solid #d3d3d3; padding: 9px 14px; text-align: left; font-size: 1rem; color: #36297d; }
-    .rota-table th { background: #faf7ff; font-weight: 600; }
-    .rota-table tr:last-child td { border-bottom: none; }
+    /* Styles for the Duty Roster table and navigation */
+    .schedule-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #ede7fd; border-radius: 6px; }
+    .schedule-table th, .schedule-table td { padding: 10px; text-align: left; font-size: 0.95rem; color: #36297d; border-bottom: 1px solid #d3d3d3; }
+    .schedule-table th { background: #d3d3d3; font-weight: 600; color: #2c0078; }
+    .schedule-table tr:last-child td { border-bottom: none; }
+    .schedule-table tr:hover { background: #e0d9f5; }
+    .search-bar { width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem; margin-bottom: 10px; background: #faf7ff; color: #2c0078; }
+    .loading-message { text-align: center; padding: 20px; color: #36297d; font-size: 1rem; }
+    .navigation-buttons { margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px; }
     @media (max-width: 600px) {
       .container {padding: 12px 2vw; max-width: 100vw;}
       .logo {width: 48vw; max-width: 225px;}
@@ -93,7 +95,8 @@
       textarea { height: 80px; }
       .route-note p { font-size: 0.9rem; }
       .route-note .delete-btn, .route-note .edit-btn { padding: 3px 6px; font-size: 0.85rem; }
-      .rota-table th, .rota-table td { font-size: 0.9rem; padding: 7px 10px; }
+      .schedule-table th, .schedule-table td { padding: 8px; font-size: 0.9rem; }
+      .search-bar { padding: 8px 10px; font-size: 0.9rem; }
     }
   </style>
 </head>
@@ -102,7 +105,7 @@
     <img src="https://www.firstbus.co.uk/themes/custom/first_bus/logo.svg" class="logo" alt="First Bus Logo">
     <div class="tabs">
       <div class="tab active" data-tab="access">Quick Access</div>
-      <div class="tab" data-tab="roster">Rota</div>
+      <div class="tab" data-tab="roster">Duty Roster</div>
       <div class="tab" data-tab="toilet">Toilet Codes</div>
       <div class="tab" data-tab="handover">Midnight Handover</div>
       <div class="tab" data-tab="route-info">Route Info</div>
@@ -145,9 +148,27 @@
       </div>
     </div>
 
-    <!-- Tab 2: Rota -->
+    <!-- Tab 2: Duty Roster (Updated with 14-Day Search by Name and Next 2 Weeks Button) -->
     <div class="tab-content" id="tab-roster">
-      <div id="rota-root"></div>
+      <label for="searchSchedule">Search Schedule</label>
+      <input type="text" id="searchSchedule" class="search-bar" placeholder="Search by Name...">
+      <div id="scheduleDisplay">
+        <div id="loadingMessage" class="loading-message">Loading schedule data...</div>
+        <table id="scheduleTable" class="schedule-table" style="display: none;">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Date</th>
+              <th>Duty</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleTableBody"></tbody>
+        </table>
+      </div>
+      <div class="navigation-buttons">
+        <button id="nextDayBtn" style="display: none;">Next Day</button>
+        <button id="nextTwoWeeksBtn" style="display: none;">Next 2 Weeks</button>
+      </div>
     </div>
 
     <!-- Tab 3: Toilet Codes -->
@@ -419,166 +440,6 @@ Events taking place/due to take place: </textarea>
     </div>
   </div>
 
-  <script type="text/babel">
-    // Embedded rota data (complete up to 28th June 2025, sample included)
-    const rotaData = [
-      { Week: "WC 12.04.25", Name: "Marco Marcham", Date: "Sat 12th April", Duty: "FW8E" },
-      { Week: "WC 12.04.25", Name: "Ksenia Banaszak", Date: "Sat 12th April", Duty: "FW1L" },
-      { Week: "WC 12.04.25", Name: "Nigel Pitt", Date: "Sat 12th April", Duty: "FW5E" },
-      { Week: "WC 12.04.25", Name: "Luke Comfort", Date: "Sat 12th April", Duty: "FW10L" },
-      { Week: "WC 12.04.25", Name: "Jakub Fojtik", Date: "Sat 12th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Ryszard Blazewicz", Date: "Sat 12th April", Duty: "HOL" },
-      { Week: "WC 12.04.25", Name: "Gurpreet Singh", Date: "Sat 12th April", Duty: "FW6L" },
-      { Week: "WC 12.04.25", Name: "Piotr Mistur TueWed Rest", Date: "Sat 12th April", Duty: "FW6E" },
-      { Week: "WC 12.04.25", Name: "Robin Atha", Date: "Sat 12th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Balasingam Thathe", Date: "Sat 12th April", Duty: "FW7L" },
-      { Week: "WC 12.04.25", Name: "Lee Sutton", Date: "Sat 12th April", Duty: "FW10E" },
-      { Week: "WC 12.04.25", Name: "Rafal Ganczarcyk TuesWeds Rest", Date: "Sat 12th April", Duty: "FW3L" },
-      { Week: "WC 12.04.25", Name: "Steve Ryan", Date: "Sat 12th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Timea Brinzea", Date: "Sat 12th April", Duty: "FW2E" },
-      { Week: "WC 12.04.25", Name: "Tracy Reynolds", Date: "Sat 12th April", Duty: "FW4L" },
-      { Week: "WC 12.04.25", Name: "Steve Cummings", Date: "Sat 12th April", Duty: "FW3E" },
-      { Week: "WC 12.04.25", Name: "Dennis McDowell Should Be On Earlies", Date: "Sat 12th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Hasan Altioglu", Date: "Sat 12th April", Duty: "FW5L" },
-      { Week: "WC 12.04.25", Name: "Paul Akerman", Date: "Sat 12th April", Duty: "HOL" },
-      { Week: "WC 12.04.25", Name: "George Whiter", Date: "Sat 12th April", Duty: "AE" },
-      { Week: "WC 12.04.25", Name: "James Davis", Date: "Sat 12th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Michal Wilkosz", Date: "Sat 12th April", Duty: "FW1E" },
-      { Week: "WC 12.04.25", Name: "Maggie Sharp", Date: "Sat 12th April", Duty: "FW9L" },
-      { Week: "WC 12.04.25", Name: "Michael Alves", Date: "Sat 12th April", Duty: "FW7E" },
-      { Week: "WC 12.04.25", Name: "Joao Oliveira", Date: "Sat 12th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Raj Mehla", Date: "Sat 12th April", Duty: "FW2L" },
-      { Week: "WC 12.04.25", Name: "Sharon Lloyd", Date: "Sat 12th April", Duty: "S" },
-      { Week: "WC 12.04.25", Name: "Tomasz Lisek", Date: "Sat 12th April", Duty: "FW9E" },
-      { Week: "WC 12.04.25", Name: "Tony Walker", Date: "Sat 12th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Wayne Hooper", Date: "Sat 12th April", Duty: "HOL" },
-      { Week: "WC 12.04.25", Name: "Joao Da Cruz", Date: "Sat 12th April", Duty: "FW8L" },
-      { Week: "WC 12.04.25", Name: "Lee Upton", Date: "Sat 12th April", Duty: "FW4E" },
-      { Week: "WC 12.04.25", Name: "Ozkan Ozbek", Date: "Sat 12th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Dan Fogden", Date: "Sat 12th April", Duty: "HOL" },
-      { Week: "WC 12.04.25", Name: "Ian Matthews", Date: "Sat 12th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Arti Papasotiriou", Date: "Sat 12th April", Duty: "S" },
-      { Week: "WC 12.04.25", Name: "Marco Marcham", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Ksenia Banaszak", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Nigel Pitt", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Luke Comfort", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Jakub Fojtik", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Ryszard Blazewicz", Date: "Sun 13th April", Duty: "HOL" },
-      { Week: "WC 12.04.25", Name: "Gurpreet Singh", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Piotr Mistur TueWed Rest", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Robin Atha", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Balasingam Thathe", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Lee Sutton", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Rafal Ganczarcyk TuesWeds Rest", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Steve Ryan", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Timea Brinzea", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Tracy Reynolds", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Steve Cummings", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Dennis McDowell Should Be On Earlies", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Hasan Altioglu", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Paul Akerman", Date: "Sun 13th April", Duty: "HOL" },
-      { Week: "WC 12.04.25", Name: "George Whiter", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "James Davis", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Michal Wilkosz", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Maggie Sharp", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Michael Alves", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Joao Oliveira", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Raj Mehla", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Sharon Lloyd", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Tomasz Lisek", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Tony Walker", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Wayne Hooper", Date: "Sun 13th April", Duty: "HOL" },
-      { Week: "WC 12.04.25", Name: "Joao Da Cruz", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Lee Upton", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Ozkan Ozbek", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Dan Fogden", Date: "Sun 13th April", Duty: "HOL" },
-      { Week: "WC 12.04.25", Name: "Ian Matthews", Date: "Sun 13th April", Duty: "RD" },
-      { Week: "WC 12.04.25", Name: "Arti Papasotiriou", Date: "Sun 13th April", Duty: "RD" },
-      // ... Additional entries up to 28th June 2025 ...
-      { Week: "WC 28.06.25", Name: "Marco Marcham", Date: "Sat 28th June", Duty: "FW7E" },
-      { Week: "WC 28.06.25", Name: "Ksenia Banaszak", Date: "Sat 28th June", Duty: "FW2L" },
-      { Week: "WC 28.06.25", Name: "Nigel Pitt", Date: "Sat 28th June", Duty: "FW4E" },
-      { Week: "WC 28.06.25", Name: "Luke Comfort", Date: "Sat 28th June", Duty: "FW9L" },
-      { Week: "WC 28.06.25", Name: "Jakub Fojtik", Date: "Sat 28th June", Duty: "RD" },
-      // ... (Full dataset would include all entries for each employee for each day up to 28th June 2025)
-    ];
-
-    // RotaTable React component
-    function RotaTable() {
-      const [filterDate, setFilterDate] = React.useState("");
-      const [filterName, setFilterName] = React.useState("");
-
-      // Convert filterDate from YYYY-MM-DD to the format used in rotaData (e.g., "Sat 12th April")
-      const convertDate = (dateStr) => {
-        if (!dateStr) return "";
-        const date = new Date(dateStr);
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        const day = date.getDate();
-        const month = months[date.getMonth()];
-        const dayName = days[date.getDay()];
-        const suffix = (day % 10 === 1 && day !== 11) ? 'st' : (day % 10 === 2 && day !== 12) ? 'nd' : (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
-        return `${dayName} ${day}${suffix} ${month}`;
-      };
-
-      const uniqueNames = [...new Set(rotaData.map(entry => entry.Name))].sort();
-
-      // Filtering data based on user input
-      const filteredDate = convertDate(filterDate);
-      const filteredData = rotaData.filter((entry) => {
-        const matchesDate = filteredDate ? entry.Date === filteredDate : true;
-        const matchesName = filterName ? entry.Name === filterName : true;
-        return matchesDate && matchesName;
-      });
-
-      return (
-        <div>
-          <div style={{ marginBottom: '24px' }}>
-            <label for="filter-date">Filter by Date</label>
-            <input type="date" id="filter-date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} min="2025-04-12" max="2025-06-28" />
-          </div>
-          <div style={{ marginBottom: '24px' }}>
-            <label for="filter-name">Filter by Name</label>
-            <select id="filter-name" value={filterName} onChange={(e) => setFilterName(e.target.value)}>
-              <option value="">All Names</option>
-              {uniqueNames.map((name) => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-          </div>
-          <table className="rota-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Duty</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.length === 0 ? (
-                <tr>
-                  <td colSpan="2" style={{ textAlign: 'center', padding: '20px' }}>
-                    No duties match the selected date.
-                  </td>
-                </tr>
-              ) : (
-                filteredData.map((entry, index) => (
-                  <tr key={index}>
-                    <td>{entry.Name}</td>
-                    <td>{entry.Duty}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-
-    // Render the RotaTable component
-    const root = ReactDOM.createRoot(document.getElementById('rota-root'));
-    root.render(<RotaTable />);
-  </script>
-
   <script>
     // ---------------- Firebase Initialization ----------------
     const firebaseConfig = {
@@ -634,6 +495,194 @@ Events taking place/due to take place: </textarea>
       }
     });
 
+    // --------- Duty Roster Logic (Updated with 14-Day Search by Name and Next 2 Weeks Button) -----------
+    let scheduleData = [];
+    let filteredData = [];
+    let currentDateIndex = 0;
+    let allDates = [];
+    let searchMode = 'default'; // 'default' or 'nameSearch'
+    let currentName = '';
+    let currentDateRangeStart = null; // For tracking the 14-day range start date
+    const searchInput = document.getElementById('searchSchedule');
+    const scheduleTable = document.getElementById('scheduleTable');
+    const scheduleTableBody = document.getElementById('scheduleTableBody');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const nextDayBtn = document.getElementById('nextDayBtn');
+    const nextTwoWeeksBtn = document.getElementById('nextTwoWeeksBtn');
+
+    // Parse date from string to Date object
+    function parseDate(dateStr) {
+      const parts = dateStr.match(/(\w+)\s(\d+)(?:th|st|nd|rd)\s(\w+)/);
+      if (!parts) return null;
+      const [, dayOfWeek, day, month] = parts;
+      const year = new Date().getFullYear(); // Assuming current year
+      return new Date(`${day} ${month} ${year}`);
+    }
+
+    // Format Date object to match the schedule format (e.g., "Sat 12th April")
+    function formatDate(date) {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const day = date.getDate();
+      const suffix = (day % 10 === 1 && day !== 11) ? 'st' :
+                     (day % 10 === 2 && day !== 12) ? 'nd' :
+                     (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
+      return `${days[date.getDay()]} ${day}${suffix} ${months[date.getMonth()]}`;
+    }
+
+    // Fetch and parse the CSV data
+    function loadScheduleData() {
+      const csvData = loadFileData("cleaned_rota_schedule.xlsx");
+      Papa.parse(csvData, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: false,
+        transformHeader: (header) => header.trim().replace(/^"|"$/g, ''),
+        transform: (value, header) => value.trim().replace(/^"|"$/g, ''),
+        complete: (results) => {
+          const cleanedData = results.data.map(row => ({
+            Name: row["Name"] || '',
+            Date: row["Date"] || '',
+            Duty: row["Duty"] || ''
+          }));
+          scheduleData = cleanedData;
+
+          // Extract unique dates and sort them
+          allDates = [...new Set(scheduleData.map(row => row.Date))]
+            .map(date => ({ dateStr: date, dateObj: parseDate(date) }))
+            .filter(item => item.dateObj)
+            .sort((a, b) => a.dateObj - b.dateObj)
+            .map(item => item.dateStr);
+
+          // Set the current date index to today's date (May 3, 2025)
+          const today = new Date(2025, 4, 3); // May 3, 2025
+          const todayFormatted = formatDate(today);
+          currentDateIndex = allDates.indexOf(todayFormatted);
+          if (currentDateIndex === -1) currentDateIndex = 0; // Fallback to first date if today not found
+
+          // Initial display
+          updateScheduleDisplay();
+          loadingMessage.style.display = 'none';
+          scheduleTable.style.display = 'table';
+        },
+        error: (err) => {
+          console.error("Error parsing CSV:", err);
+          loadingMessage.textContent = 'Error loading schedule data.';
+          loadingMessage.style.color = '#d70a33';
+        }
+      });
+    }
+
+    // Update the schedule display based on the current mode
+    function updateScheduleDisplay() {
+      if (searchMode === 'default') {
+        // Default mode: Show only the current day's schedule
+        const currentDate = allDates[currentDateIndex];
+        filteredData = scheduleData.filter(row => row.Date === currentDate);
+        nextDayBtn.style.display = 'block';
+        nextTwoWeeksBtn.style.display = 'none';
+      } else if (searchMode === 'nameSearch') {
+        // Name search mode: Show the next 14 days for the searched name
+        const name = currentName.toLowerCase();
+        const dateObjects = allDates.map(date => ({ dateStr: date, dateObj: parseDate(date) }))
+          .filter(item => item.dateObj)
+          .sort((a, b) => a.dateObj - b.dateObj);
+
+        // Find the index of the current range start date
+        let startIndex = dateObjects.findIndex(item => item.dateStr === currentDateRangeStart);
+        if (startIndex === -1) startIndex = 0;
+
+        // Get the next 14 days starting from the current range start
+        const endIndex = Math.min(startIndex + 14, dateObjects.length);
+        const dateRange = dateObjects.slice(startIndex, endIndex).map(item => item.dateStr);
+
+        // Filter schedule data for the name within the date range
+        filteredData = scheduleData.filter(row =>
+          row.Name.toLowerCase() === name &&
+          dateRange.includes(row.Date)
+        );
+
+        // Show/hide buttons
+        nextDayBtn.style.display = 'none';
+        nextTwoWeeksBtn.style.display = endIndex < dateObjects.length ? 'block' : 'none';
+      }
+
+      renderScheduleTable();
+    }
+
+    // Render the schedule table
+    function renderScheduleTable() {
+      scheduleTableBody.innerHTML = '';
+      if (filteredData.length === 0) {
+        scheduleTableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No schedule available.</td></tr>';
+        return;
+      }
+      filteredData.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.Name}</td>
+          <td>${row.Date}</td>
+          <td>${row.Duty}</td>
+        `;
+        scheduleTableBody.appendChild(tr);
+      });
+    }
+
+    // Handle search functionality
+    searchInput.addEventListener('input', (e) => {
+      const term = e.target.value.trim().toLowerCase();
+      if (term === '') {
+        // If search is cleared, revert to default mode
+        searchMode = 'default';
+        currentName = '';
+        currentDateRangeStart = null;
+        const today = new Date(2025, 4, 3); // May 3, 2025
+        const todayFormatted = formatDate(today);
+        currentDateIndex = allDates.indexOf(todayFormatted);
+        if (currentDateIndex === -1) currentDateIndex = 0;
+      } else {
+        // Search by name: Show next 14 days
+        searchMode = 'nameSearch';
+        currentName = term;
+        // Set the range start to the earliest date in the schedule
+        currentDateRangeStart = allDates[0];
+      }
+      updateScheduleDisplay();
+    });
+
+    // Handle next day button
+    nextDayBtn.addEventListener('click', () => {
+      currentDateIndex = (currentDateIndex + 1) % allDates.length; // Cycle through dates
+      updateScheduleDisplay();
+    });
+
+    // Handle next 2 weeks button
+    nextTwoWeeksBtn.addEventListener('click', () => {
+      // Find the current range start index
+      const dateObjects = allDates.map(date => ({ dateStr: date, dateObj: parseDate(date) }))
+        .filter(item => item.dateObj)
+        .sort((a, b) => a.dateObj - b.dateObj);
+
+      let startIndex = dateObjects.findIndex(item => item.dateStr === currentDateRangeStart);
+      if (startIndex === -1) startIndex = 0;
+
+      // Move to the next 14-day range
+      startIndex += 14;
+      if (startIndex >= dateObjects.length) startIndex = 0; // Cycle back to the start if we reach the end
+      currentDateRangeStart = dateObjects[startIndex].dateStr;
+
+      updateScheduleDisplay();
+    });
+
+    // Load the schedule data when the Duty Roster tab is opened
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        if (tab.dataset.tab === 'roster' && scheduleData.length === 0) {
+          loadScheduleData();
+        }
+      });
+    });
+
     // --------- Toilet Codes Logic -----------
     const toiletCodesData = [
       { location: "Acton Green", mainDoor: "7469", gents: "", ladies: "", keyLockBox: "" },
@@ -685,7 +734,7 @@ Events taking place/due to take place: </textarea>
 
     toiletLocationDd.addEventListener('change', () => {
       showToiletCodesBtn.disabled = !toiletLocationDd.value;
-      toiletCodesDisplay.style.display = 'none';
+      toiletCodesDisplay.style.display = 'none'; // Hide display when changing selection
     });
 
     showToiletCodesBtn.addEventListener('click', () => {
@@ -735,14 +784,16 @@ Events taking place/due to take place: </textarea>
     const routeInfoText = document.getElementById('routeInfo');
     const saveRouteNoteBtn = document.getElementById('saveRouteNote');
     const routeNotesList = document.getElementById('routeNotesList');
-    let editingNoteId = null;
+    let editingNoteId = null; // Track if we're editing a note
 
+    // Enable/disable Save button based on input
     function updateSaveButtonState() {
       saveRouteNoteBtn.disabled = !(routeDd.value && routeInfoText.value.trim());
     }
     routeDd.addEventListener('change', updateSaveButtonState);
     routeInfoText.addEventListener('input', updateSaveButtonState);
 
+    // Save or update a note to Firebase
     saveRouteNoteBtn.addEventListener('click', () => {
       const route = routeDd.value;
       const info = routeInfoText.value.trim();
@@ -755,6 +806,7 @@ Events taking place/due to take place: </textarea>
       };
 
       if (editingNoteId) {
+        // Update existing note
         database.ref('route-info/' + editingNoteId).update(note)
           .then(() => {
             resetForm();
@@ -765,6 +817,7 @@ Events taking place/due to take place: </textarea>
             saveRouteNoteBtn.style.background = '#d70a33';
           });
       } else {
+        // Save new note
         database.ref('route-info').push(note)
           .then(() => {
             resetForm();
@@ -786,19 +839,23 @@ Events taking place/due to take place: </textarea>
       saveRouteNoteBtn.style.background = '#ff44d0';
     }
 
+    // Load and display notes from Firebase, filtered by selected route
     function loadRouteNotes() {
-      let allNotes = [];
+      let allNotes = []; // Store all notes to filter them dynamically
 
+      // Listen for changes in Firebase database
       database.ref('route-info').on('value', (snapshot) => {
         const notes = snapshot.val();
         allNotes = notes ? Object.entries(notes).map(([id, note]) => ({ id, ...note })) : [];
-        renderNotes();
+        renderNotes(); // Render notes initially based on current dropdown selection
       });
 
+      // Function to render notes based on the selected route
       function renderNotes() {
         const selectedRoute = routeDd.value;
         routeNotesList.innerHTML = '';
 
+        // Filter notes by the selected route (if a route is selected)
         const filteredNotes = selectedRoute
           ? allNotes.filter(note => note.route === selectedRoute)
           : [];
@@ -808,6 +865,7 @@ Events taking place/due to take place: </textarea>
           return;
         }
 
+        // Sort by timestamp (newest first) and render
         filteredNotes.sort((a, b) => b.timestamp - a.timestamp);
         filteredNotes.forEach(note => {
           const noteDiv = document.createElement('div');
@@ -821,6 +879,7 @@ Events taking place/due to take place: </textarea>
           `;
           routeNotesList.appendChild(noteDiv);
 
+          // Add edit functionality
           noteDiv.querySelector('.edit-btn').addEventListener('click', () => {
             editingNoteId = note.id;
             routeDd.value = note.route;
@@ -830,6 +889,7 @@ Events taking place/due to take place: </textarea>
             updateSaveButtonState();
           });
 
+          // Add delete functionality
           noteDiv.querySelector('.delete-btn').addEventListener('click', () => {
             database.ref('route-info/' + note.id).remove()
               .catch(error => {
@@ -840,14 +900,17 @@ Events taking place/due to take place: </textarea>
         });
       }
 
+      // Update notes whenever the route selection changes, but don't reset the form
       routeDd.addEventListener('change', () => {
-        if (!editingNoteId) {
+        // Only clear the textarea and update button state, keep the dropdown selection
+        if (!editingNoteId) { // Don't clear if we're editing a note
           routeInfoText.value = '';
           updateSaveButtonState();
         }
         renderNotes();
       });
 
+      // Reset the form when switching to the Route Info tab
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
           if (tab.dataset.tab === 'route-info') {
@@ -866,17 +929,22 @@ Events taking place/due to take place: </textarea>
       const now = new Date();
       const hours = now.getHours();
       const minutes = now.getMinutes();
-      const currentDate = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+      const currentDate = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
 
+      // Check if it's 18:30 and we haven't triggered the alarm today
       if (hours === 18 && minutes === 30 && lastAlarmDate !== currentDate) {
         alert("MOVE YOUR CAR");
-        lastAlarmDate = currentDate;
+        lastAlarmDate = currentDate; // Update the last alarm date to prevent multiple triggers
       }
     }
 
+    function pad(n) { return n < 10 ? '0' + n : n; }
+
+    // Check the time every minute (60,000 milliseconds)
     setInterval(checkAlarm, 60000);
+
+    // Run the check immediately in case the app is opened exactly at 18:30
     checkAlarm();
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'939e9125bb3fafad',t:'MTc0NjI2MjgxNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'939ed28e8b8abf9a',t:'MTc0NjI2NTQ5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
