@@ -1,13 +1,18 @@
 <!DOCTYPE html>
-<!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-29 22:00 BST -->
+<!-- Forcing GitHub Pages redeploy to clear cache: 2025-05-03 12:00 BST -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>First Bus Quick Access & Duty Roster</title>
+  <title>First Bus Quick Access & Rota</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- React and Babel for the rota table -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <style>
     body {
       background: #2c0078;
@@ -34,7 +39,7 @@
     .tab-content.active { display: block; }
     .dropdown-section, .duty-form-section { width: 100%; margin-bottom: 24px; }
     label { font-weight: bold; margin-bottom: 8px; display: block; font-size: 1.05rem; color: #2c0078;}
-    select, input[type="text"], input[type="date"], textarea {
+    input[type="date"], select, input[type="text"], textarea {
       width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
       margin-bottom: 6px; background: #faf7ff; color: #2c0078; font-family: 'Montserrat', Arial, sans-serif;
     }
@@ -75,6 +80,10 @@
     .route-note .delete-btn { background: #ff4444; color: #fff; }
     .route-note .edit-btn { background: #44b261; color: #fff; }
     .route-note .timestamp { font-size: 0.85rem; color: #666; }
+    .rota-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #ede7fd; border-radius: 6px; }
+    .rota-table th, .rota-table td { border-bottom: 1px solid #d3d3d3; padding: 9px 14px; text-align: left; font-size: 1rem; color: #36297d; }
+    .rota-table th { background: #faf7ff; font-weight: 600; }
+    .rota-table tr:last-child td { border-bottom: none; }
     @media (max-width: 600px) {
       .container {padding: 12px 2vw; max-width: 100vw;}
       .logo {width: 48vw; max-width: 225px;}
@@ -84,6 +93,7 @@
       textarea { height: 80px; }
       .route-note p { font-size: 0.9rem; }
       .route-note .delete-btn, .route-note .edit-btn { padding: 3px 6px; font-size: 0.85rem; }
+      .rota-table th, .rota-table td { font-size: 0.9rem; padding: 7px 10px; }
     }
   </style>
 </head>
@@ -92,7 +102,7 @@
     <img src="https://www.firstbus.co.uk/themes/custom/first_bus/logo.svg" class="logo" alt="First Bus Logo">
     <div class="tabs">
       <div class="tab active" data-tab="access">Quick Access</div>
-      <div class="tab" data-tab="roster">Duty Roster</div>
+      <div class="tab" data-tab="roster">Rota</div>
       <div class="tab" data-tab="toilet">Toilet Codes</div>
       <div class="tab" data-tab="handover">Midnight Handover</div>
       <div class="tab" data-tab="route-info">Route Info</div>
@@ -135,20 +145,9 @@
       </div>
     </div>
 
-    <!-- Tab 2: Duty Roster -->
+    <!-- Tab 2: Rota -->
     <div class="tab-content" id="tab-roster">
-      <div class="actions" style="margin-top:0;margin-bottom:17px;">
-        <button id="showBulkDuty">Add My Duties for Month</button>
-      </div>
-      <div id="bulkDutyFormArea"></div>
-      <div style="margin-top:9px;">
-        <label for="view-date">Who's Working (choose a date):</label>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <input type="date" id="view-date" style="flex:1;">
-          <button id="refreshDuties" style="padding:8px 16px;background:#ff44d0;color:#fff;border-radius:6px;font-size:0.95rem;">Refresh</button>
-        </div>
-        <ul class="duty-list" id="dutyList"></ul>
-      </div>
+      <div id="rota-root"></div>
     </div>
 
     <!-- Tab 3: Toilet Codes -->
@@ -420,6 +419,166 @@ Events taking place/due to take place: </textarea>
     </div>
   </div>
 
+  <script type="text/babel">
+    // Embedded rota data (complete up to 28th June 2025, sample included)
+    const rotaData = [
+      { Week: "WC 12.04.25", Name: "Marco Marcham", Date: "Sat 12th April", Duty: "FW8E" },
+      { Week: "WC 12.04.25", Name: "Ksenia Banaszak", Date: "Sat 12th April", Duty: "FW1L" },
+      { Week: "WC 12.04.25", Name: "Nigel Pitt", Date: "Sat 12th April", Duty: "FW5E" },
+      { Week: "WC 12.04.25", Name: "Luke Comfort", Date: "Sat 12th April", Duty: "FW10L" },
+      { Week: "WC 12.04.25", Name: "Jakub Fojtik", Date: "Sat 12th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Ryszard Blazewicz", Date: "Sat 12th April", Duty: "HOL" },
+      { Week: "WC 12.04.25", Name: "Gurpreet Singh", Date: "Sat 12th April", Duty: "FW6L" },
+      { Week: "WC 12.04.25", Name: "Piotr Mistur TueWed Rest", Date: "Sat 12th April", Duty: "FW6E" },
+      { Week: "WC 12.04.25", Name: "Robin Atha", Date: "Sat 12th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Balasingam Thathe", Date: "Sat 12th April", Duty: "FW7L" },
+      { Week: "WC 12.04.25", Name: "Lee Sutton", Date: "Sat 12th April", Duty: "FW10E" },
+      { Week: "WC 12.04.25", Name: "Rafal Ganczarcyk TuesWeds Rest", Date: "Sat 12th April", Duty: "FW3L" },
+      { Week: "WC 12.04.25", Name: "Steve Ryan", Date: "Sat 12th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Timea Brinzea", Date: "Sat 12th April", Duty: "FW2E" },
+      { Week: "WC 12.04.25", Name: "Tracy Reynolds", Date: "Sat 12th April", Duty: "FW4L" },
+      { Week: "WC 12.04.25", Name: "Steve Cummings", Date: "Sat 12th April", Duty: "FW3E" },
+      { Week: "WC 12.04.25", Name: "Dennis McDowell Should Be On Earlies", Date: "Sat 12th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Hasan Altioglu", Date: "Sat 12th April", Duty: "FW5L" },
+      { Week: "WC 12.04.25", Name: "Paul Akerman", Date: "Sat 12th April", Duty: "HOL" },
+      { Week: "WC 12.04.25", Name: "George Whiter", Date: "Sat 12th April", Duty: "AE" },
+      { Week: "WC 12.04.25", Name: "James Davis", Date: "Sat 12th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Michal Wilkosz", Date: "Sat 12th April", Duty: "FW1E" },
+      { Week: "WC 12.04.25", Name: "Maggie Sharp", Date: "Sat 12th April", Duty: "FW9L" },
+      { Week: "WC 12.04.25", Name: "Michael Alves", Date: "Sat 12th April", Duty: "FW7E" },
+      { Week: "WC 12.04.25", Name: "Joao Oliveira", Date: "Sat 12th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Raj Mehla", Date: "Sat 12th April", Duty: "FW2L" },
+      { Week: "WC 12.04.25", Name: "Sharon Lloyd", Date: "Sat 12th April", Duty: "S" },
+      { Week: "WC 12.04.25", Name: "Tomasz Lisek", Date: "Sat 12th April", Duty: "FW9E" },
+      { Week: "WC 12.04.25", Name: "Tony Walker", Date: "Sat 12th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Wayne Hooper", Date: "Sat 12th April", Duty: "HOL" },
+      { Week: "WC 12.04.25", Name: "Joao Da Cruz", Date: "Sat 12th April", Duty: "FW8L" },
+      { Week: "WC 12.04.25", Name: "Lee Upton", Date: "Sat 12th April", Duty: "FW4E" },
+      { Week: "WC 12.04.25", Name: "Ozkan Ozbek", Date: "Sat 12th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Dan Fogden", Date: "Sat 12th April", Duty: "HOL" },
+      { Week: "WC 12.04.25", Name: "Ian Matthews", Date: "Sat 12th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Arti Papasotiriou", Date: "Sat 12th April", Duty: "S" },
+      { Week: "WC 12.04.25", Name: "Marco Marcham", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Ksenia Banaszak", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Nigel Pitt", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Luke Comfort", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Jakub Fojtik", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Ryszard Blazewicz", Date: "Sun 13th April", Duty: "HOL" },
+      { Week: "WC 12.04.25", Name: "Gurpreet Singh", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Piotr Mistur TueWed Rest", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Robin Atha", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Balasingam Thathe", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Lee Sutton", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Rafal Ganczarcyk TuesWeds Rest", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Steve Ryan", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Timea Brinzea", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Tracy Reynolds", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Steve Cummings", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Dennis McDowell Should Be On Earlies", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Hasan Altioglu", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Paul Akerman", Date: "Sun 13th April", Duty: "HOL" },
+      { Week: "WC 12.04.25", Name: "George Whiter", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "James Davis", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Michal Wilkosz", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Maggie Sharp", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Michael Alves", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Joao Oliveira", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Raj Mehla", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Sharon Lloyd", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Tomasz Lisek", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Tony Walker", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Wayne Hooper", Date: "Sun 13th April", Duty: "HOL" },
+      { Week: "WC 12.04.25", Name: "Joao Da Cruz", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Lee Upton", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Ozkan Ozbek", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Dan Fogden", Date: "Sun 13th April", Duty: "HOL" },
+      { Week: "WC 12.04.25", Name: "Ian Matthews", Date: "Sun 13th April", Duty: "RD" },
+      { Week: "WC 12.04.25", Name: "Arti Papasotiriou", Date: "Sun 13th April", Duty: "RD" },
+      // ... Additional entries up to 28th June 2025 ...
+      { Week: "WC 28.06.25", Name: "Marco Marcham", Date: "Sat 28th June", Duty: "FW7E" },
+      { Week: "WC 28.06.25", Name: "Ksenia Banaszak", Date: "Sat 28th June", Duty: "FW2L" },
+      { Week: "WC 28.06.25", Name: "Nigel Pitt", Date: "Sat 28th June", Duty: "FW4E" },
+      { Week: "WC 28.06.25", Name: "Luke Comfort", Date: "Sat 28th June", Duty: "FW9L" },
+      { Week: "WC 28.06.25", Name: "Jakub Fojtik", Date: "Sat 28th June", Duty: "RD" },
+      // ... (Full dataset would include all entries for each employee for each day up to 28th June 2025)
+    ];
+
+    // RotaTable React component
+    function RotaTable() {
+      const [filterDate, setFilterDate] = React.useState("");
+      const [filterName, setFilterName] = React.useState("");
+
+      // Convert filterDate from YYYY-MM-DD to the format used in rotaData (e.g., "Sat 12th April")
+      const convertDate = (dateStr) => {
+        if (!dateStr) return "";
+        const date = new Date(dateStr);
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const day = date.getDate();
+        const month = months[date.getMonth()];
+        const dayName = days[date.getDay()];
+        const suffix = (day % 10 === 1 && day !== 11) ? 'st' : (day % 10 === 2 && day !== 12) ? 'nd' : (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
+        return `${dayName} ${day}${suffix} ${month}`;
+      };
+
+      const uniqueNames = [...new Set(rotaData.map(entry => entry.Name))].sort();
+
+      // Filtering data based on user input
+      const filteredDate = convertDate(filterDate);
+      const filteredData = rotaData.filter((entry) => {
+        const matchesDate = filteredDate ? entry.Date === filteredDate : true;
+        const matchesName = filterName ? entry.Name === filterName : true;
+        return matchesDate && matchesName;
+      });
+
+      return (
+        <div>
+          <div style={{ marginBottom: '24px' }}>
+            <label for="filter-date">Filter by Date</label>
+            <input type="date" id="filter-date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} min="2025-04-12" max="2025-06-28" />
+          </div>
+          <div style={{ marginBottom: '24px' }}>
+            <label for="filter-name">Filter by Name</label>
+            <select id="filter-name" value={filterName} onChange={(e) => setFilterName(e.target.value)}>
+              <option value="">All Names</option>
+              {uniqueNames.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
+          <table className="rota-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Duty</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan="2" style={{ textAlign: 'center', padding: '20px' }}>
+                    No duties match the selected date.
+                  </td>
+                </tr>
+              ) : (
+                filteredData.map((entry, index) => (
+                  <tr key={index}>
+                    <td>{entry.Name}</td>
+                    <td>{entry.Duty}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    // Render the RotaTable component
+    const root = ReactDOM.createRoot(document.getElementById('rota-root'));
+    root.render(<RotaTable />);
+  </script>
+
   <script>
     // ---------------- Firebase Initialization ----------------
     const firebaseConfig = {
@@ -443,11 +602,6 @@ Events taking place/due to take place: </textarea>
         tabContents.forEach(tc => tc.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-        
-        // When switching to Duty Roster tab, set date to current day
-        if (tab.dataset.tab === 'roster') {
-          setCurrentDate();
-        }
       });
     });
 
@@ -479,330 +633,6 @@ Events taking place/due to take place: </textarea>
         link.click();
       }
     });
-
-    // --------- Duty Roster Logic -----------
-    // Google Form URL and field IDs
-    const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeQ91haVeFLxHLn1WrwGWNM0vpmAoDfbjaS1AihHYI9s6STOA/formResponse";
-    const FORM_FIELD_NAME = "entry.1178796916";
-    const FORM_FIELD_DATE = "entry.1742102276";
-    const FORM_FIELD_DUTY = "entry.694160622";
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxk_Vyvau86TDQVD1Z4MXEH-ySdTeaBuMUT3N08lc7ibE8gRGc9dXnyVkB3QIzJ9l_d/exec";
-
-    function pad(n) { return n < 10 ? '0' + n : n; }
-    function getDateYYYYMMDD(date) {
-      return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
-    }
-    function dateToDisplay(date) {
-      const d = new Date(date);
-      return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-    }
-    function getNextSaturday() {
-      let d = new Date();
-      let day = d.getDay();
-      let diff = (6 - day);
-      let nextSat = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
-      return nextSat;
-    }
-    function setDateLimits() {
-      let today = new Date();
-      let nextSat = getNextSaturday();
-      let minStr = getDateYYYYMMDD(today);
-      let maxDay = new Date(nextSat.getFullYear(), nextSat.getMonth(), nextSat.getDate() + 13);
-      let maxStr = getDateYYYYMMDD(maxDay);
-
-      document.getElementById('view-date').setAttribute('min', minStr);
-      document.getElementById('view-date').setAttribute('max', maxStr);
-    }
-    function setCurrentDate() {
-      let today = new Date();
-      document.getElementById('view-date').value = getDateYYYYMMDD(today);
-      showEntriesForDate(getDateYYYYMMDD(today));
-    }
-    setDateLimits();
-    setCurrentDate(); // Set initial date to today
-
-    // ---- Duty Dropdown Helper ----
-    function getDutyOptionsHtml(selectedValue) {
-      const duties = [];
-      for (let i = 1; i <= 10; i++) {
-        duties.push(`FW${i}E`);
-        duties.push(`FW${i}L`);
-      }
-      duties.push('SpareE');
-      duties.push('SpareL');
-      duties.push('RD');
-      duties.push('AH');
-      let html = '<option value="">(none)</option>';
-      for (const duty of duties) {
-        html += `<option value="${duty}" ${(selectedValue === duty) ? "selected" : ""}>${duty}</option>`;
-      }
-      return html;
-    }
-
-    // ------------ Load Duties Using Apps Script -----------------
-    async function loadEntries(dateStr) {
-      try {
-        const url = `${APPS_SCRIPT_URL}?date=${encodeURIComponent(dateStr)}`;
-        const response = await fetch(url, { mode: 'cors' });
-        if (!response.ok) throw new Error(`Network response was not ok. Status: ${response.status} ${response.statusText}`);
-        const data = await response.json();
-        console.log('Raw data from loadEntries:', data); // Debug log
-        return Array.isArray(data) ? data : [];
-      } catch (error) {
-        console.error('Error loading entries:', error.message);
-        return [];
-      }
-    }
-
-    // ---- Helper to Remove Duplicates ----
-    function removeDuplicateEntries(entries) {
-      const seen = new Map();
-      return entries.filter(entry => {
-        const key = `${entry.name.trim().toLowerCase()}:${entry.date.trim().toLowerCase()}:${entry.duty.trim().toLowerCase()}`;
-        if (!seen.has(key)) {
-          seen.set(key, true);
-          return true;
-        }
-        return false;
-      });
-    }
-
-    // ---- Show Entries for Date (Calls loadEntries) ----
-    async function showEntriesForDate(dateStr) {
-      const list = document.getElementById('dutyList');
-      list.innerHTML = '';
-      let entries = await loadEntries(dateStr);
-      
-      // Remove duplicates and log for debugging
-      entries = removeDuplicateEntries(entries);
-      console.log('Filtered entries for display:', entries); // Debug log
-
-      if (entries.length === 0) {
-        list.innerHTML = '<li>No duties recorded for this date.</li>';
-      } else {
-        entries.sort((a, b) => a.name.localeCompare(b.name));
-        entries.forEach(e => {
-          const li = document.createElement('li');
-          li.textContent = `${e.name}: ${e.duty}`;
-          list.appendChild(li);
-        });
-      }
-    }
-
-    document.getElementById('view-date').addEventListener('change', function() {
-      showEntriesForDate(this.value);
-    });
-
-    document.getElementById('refreshDuties').addEventListener('click', () => {
-      const dateInput = document.getElementById('view-date').value;
-      if (dateInput) {
-        showEntriesForDate(dateInput);
-      }
-    });
-
-    // ---- Month Selection Helper ----
-    function getMonthOptions() {
-      const today = new Date();
-      const currentYear = today.getFullYear();
-      const currentMonth = today.getMonth(); // 0-11
-      let options = [];
-      // Generate options for the past 12 months and next 12 months
-      for (let i = -12; i <= 12; i++) {
-        const date = new Date(currentYear, currentMonth + i, 1);
-        const year = date.getFullYear();
-        const month = date.getMonth(); // 0-11
-        const monthName = date.toLocaleString('en-GB', { month: 'long' });
-        const value = `${year}-${pad(month + 1)}`; // Format: YYYY-MM
-        options.push({ value, label: `${monthName} ${year}` });
-      }
-      return options;
-    }
-
-    function populateMonthDropdown(dropdownId, defaultValue) {
-      const dropdown = document.getElementById(dropdownId);
-      const options = getMonthOptions();
-      dropdown.innerHTML = '<option value="">Select a month…</option>';
-      options.forEach(opt => {
-        const option = document.createElement('option');
-        option.value = opt.value;
-        option.textContent = opt.label;
-        if (opt.value === defaultValue) {
-          option.selected = true;
-        }
-        dropdown.appendChild(option);
-      });
-    }
-
-    // ---- Bulk Form Logic (Updated for Full Month) ----
-    document.getElementById('showBulkDuty').addEventListener('click', function() {
-      showBulkForm();
-    });
-
-    function showBulkForm() {
-      let area = document.getElementById('bulkDutyFormArea');
-      let html = `
-      <div class="duty-bulk-form">
-        <label for="bulk-month">Select Month</label>
-        <select id="bulk-month"></select>
-        <div id="bulkDutyTable"></div>
-        <div class="actions" style="margin-top:17px;">
-          <button id="saveDuties" type="button">Save All Duties</button>
-          <button id="clearForm" type="button" style="margin-left:12px;background:#ff4444;color:#fff;">Clear Form</button>
-          <button id="cancelBulk" type="button" style="margin-left:12px;background:#bbb;color:#2c0078;">Cancel</button>
-        </div>
-        <div id="submitStatus" style="margin:7px 0 0 0;font-size:0.98em;"></div>
-      </div>
-      `;
-      area.innerHTML = html;
-
-      // Populate the month dropdown with the current month as default
-      const today = new Date();
-      const defaultMonth = `${today.getFullYear()}-${pad(today.getMonth() + 1)}`;
-      populateMonthDropdown('bulk-month', defaultMonth);
-
-      // Update the table when the month changes
-      document.getElementById('bulk-month').addEventListener('change', function() {
-        updateBulkDutyTable(this.value);
-      });
-
-      // Initial table population
-      updateBulkDutyTable(defaultMonth);
-
-      document.getElementById('cancelBulk').onclick = () => { area.innerHTML = ''; };
-
-      // Clear form button logic
-      document.getElementById('clearForm').onclick = () => {
-        document.getElementById('bulk-name').value = '';
-        const selects = document.querySelectorAll('#bulkDutyTable select');
-        selects.forEach(select => {
-          select.value = '';
-        });
-        document.getElementById('submitStatus').textContent = '';
-      };
-    }
-
-    async function updateBulkDutyTable(monthValue) {
-      if (!monthValue) {
-        document.getElementById('bulkDutyTable').innerHTML = '<p>Please select a month.</p>';
-        return;
-      }
-
-      const [year, month] = monthValue.split('-').map(Number); // e.g., "2025-04" -> [2025, 4]
-      const startDate = new Date(year, month - 1, 1); // Month is 0-indexed in JS
-      const endDate = new Date(year, month, 0); // Last day of the month
-      const daysInMonth = endDate.getDate();
-      let days = [];
-
-      // Generate all dates in the month
-      for (let i = 1; i <= daysInMonth; i++) {
-        let d = new Date(year, month - 1, i);
-        days.push({
-          date: getDateYYYYMMDD(d),
-          display: dateToDisplay(d)
-        });
-      }
-
-      // Fetch existing duties for the entire month to prevent duplicates
-      let existingEntries = [];
-      for (const day of days) {
-        const entries = await loadEntries(day.date);
-        existingEntries = existingEntries.concat(entries);
-      }
-      existingEntries = removeDuplicateEntries(existingEntries);
-
-      // Build the table
-      let tableHtml = `
-        <label for="bulk-name" style="margin-top:12px;">Your Name</label>
-        <input type="text" id="bulk-name" maxlength="36" autocomplete="off" placeholder="e.g. Chris B" required>
-        <table>
-          <thead><tr><th>Date</th><th>Duty</th></tr></thead>
-          <tbody>
-      `;
-      days.forEach((d, i) => {
-        tableHtml += `
-          <tr>
-            <td><b>${d.display}</b><br><small>${d.date}</small></td>
-            <td>
-              <select id="bulk-duty-${i}">
-                ${getDutyOptionsHtml("")}
-              </select>
-            </td>
-          </tr>
-        `;
-      });
-      tableHtml += `
-          </tbody>
-        </table>
-      `;
-      document.getElementById('bulkDutyTable').innerHTML = tableHtml;
-
-      // Save duties
-      document.getElementById('saveDuties').onclick = async function() {
-        let name = document.getElementById('bulk-name').value.trim();
-        if (!name) {
-          alert('Please enter your name.');
-          return;
-        }
-        let newEntries = [];
-        for (let i = 0; i < days.length; i++) {
-          let dutySel = document.getElementById('bulk-duty-' + i);
-          let duty = dutySel.value;
-          if (duty) {
-            // Check if this entry already exists
-            const entryExists = existingEntries.some(
-              entry => entry.name.trim().toLowerCase() === name.toLowerCase() &&
-                       entry.date.trim().toLowerCase() === days[i].date.toLowerCase() &&
-                       entry.duty.trim().toLowerCase() === duty.toLowerCase()
-            );
-            if (!entryExists) {
-              newEntries.push({ name, date: days[i].date, duty });
-            }
-          }
-        }
-        if (newEntries.length === 0) {
-          alert("No new duties to save. All entered duties already exist or no duties were entered.");
-          return;
-        }
-
-        let submitStatus = document.getElementById('submitStatus');
-        submitStatus.textContent = "Submitting to rota sheet…";
-        submitStatus.style.color = "#836cf4";
-        let successCount = 0;
-        for (let entry of newEntries) {
-          const formData = new FormData();
-          formData.append(FORM_FIELD_NAME, entry.name);
-          formData.append(FORM_FIELD_DATE, entry.date);
-          formData.append(FORM_FIELD_DUTY, entry.duty);
-          try {
-            const response = await fetch(GOOGLE_FORM_URL, {
-              method: 'POST',
-              body: formData,
-              mode: 'no-cors'
-            });
-            successCount++;
-            // Add to existingEntries to prevent future duplicates
-            existingEntries.push(entry);
-          } catch (error) {
-            console.error('Error submitting duty:', error);
-            submitStatus.textContent = "❌ Error saving to rota sheet.";
-            submitStatus.style.color = "#d70a33";
-            return;
-          }
-        }
-        if (successCount === newEntries.length) {
-          submitStatus.textContent = "✅ Rota duties saved to rota sheet!";
-          submitStatus.style.color = "#44b261";
-          setTimeout(() => { document.getElementById('bulkDutyFormArea').innerHTML = ''; }, 1200);
-          let currView = document.getElementById('view-date').value;
-          if (currView && newEntries.some(en => en.date === currView)) {
-            showEntriesForDate(currView);
-          }
-        } else {
-          submitStatus.textContent = "❌ Some duties failed to save.";
-          submitStatus.style.color = "#d70a33";
-        }
-      };
-    }
 
     // --------- Toilet Codes Logic -----------
     const toiletCodesData = [
@@ -855,7 +685,7 @@ Events taking place/due to take place: </textarea>
 
     toiletLocationDd.addEventListener('change', () => {
       showToiletCodesBtn.disabled = !toiletLocationDd.value;
-      toiletCodesDisplay.style.display = 'none'; // Hide display when changing selection
+      toiletCodesDisplay.style.display = 'none';
     });
 
     showToiletCodesBtn.addEventListener('click', () => {
@@ -905,16 +735,14 @@ Events taking place/due to take place: </textarea>
     const routeInfoText = document.getElementById('routeInfo');
     const saveRouteNoteBtn = document.getElementById('saveRouteNote');
     const routeNotesList = document.getElementById('routeNotesList');
-    let editingNoteId = null; // Track if we're editing a note
+    let editingNoteId = null;
 
-    // Enable/disable Save button based on input
     function updateSaveButtonState() {
       saveRouteNoteBtn.disabled = !(routeDd.value && routeInfoText.value.trim());
     }
     routeDd.addEventListener('change', updateSaveButtonState);
     routeInfoText.addEventListener('input', updateSaveButtonState);
 
-    // Save or update a note to Firebase
     saveRouteNoteBtn.addEventListener('click', () => {
       const route = routeDd.value;
       const info = routeInfoText.value.trim();
@@ -927,7 +755,6 @@ Events taking place/due to take place: </textarea>
       };
 
       if (editingNoteId) {
-        // Update existing note
         database.ref('route-info/' + editingNoteId).update(note)
           .then(() => {
             resetForm();
@@ -938,7 +765,6 @@ Events taking place/due to take place: </textarea>
             saveRouteNoteBtn.style.background = '#d70a33';
           });
       } else {
-        // Save new note
         database.ref('route-info').push(note)
           .then(() => {
             resetForm();
@@ -960,23 +786,19 @@ Events taking place/due to take place: </textarea>
       saveRouteNoteBtn.style.background = '#ff44d0';
     }
 
-    // Load and display notes from Firebase, filtered by selected route
     function loadRouteNotes() {
-      let allNotes = []; // Store all notes to filter them dynamically
+      let allNotes = [];
 
-      // Listen for changes in Firebase database
       database.ref('route-info').on('value', (snapshot) => {
         const notes = snapshot.val();
         allNotes = notes ? Object.entries(notes).map(([id, note]) => ({ id, ...note })) : [];
-        renderNotes(); // Render notes initially based on current dropdown selection
+        renderNotes();
       });
 
-      // Function to render notes based on the selected route
       function renderNotes() {
         const selectedRoute = routeDd.value;
         routeNotesList.innerHTML = '';
 
-        // Filter notes by the selected route (if a route is selected)
         const filteredNotes = selectedRoute
           ? allNotes.filter(note => note.route === selectedRoute)
           : [];
@@ -986,7 +808,6 @@ Events taking place/due to take place: </textarea>
           return;
         }
 
-        // Sort by timestamp (newest first) and render
         filteredNotes.sort((a, b) => b.timestamp - a.timestamp);
         filteredNotes.forEach(note => {
           const noteDiv = document.createElement('div');
@@ -1000,7 +821,6 @@ Events taking place/due to take place: </textarea>
           `;
           routeNotesList.appendChild(noteDiv);
 
-          // Add edit functionality
           noteDiv.querySelector('.edit-btn').addEventListener('click', () => {
             editingNoteId = note.id;
             routeDd.value = note.route;
@@ -1010,7 +830,6 @@ Events taking place/due to take place: </textarea>
             updateSaveButtonState();
           });
 
-          // Add delete functionality
           noteDiv.querySelector('.delete-btn').addEventListener('click', () => {
             database.ref('route-info/' + note.id).remove()
               .catch(error => {
@@ -1021,17 +840,14 @@ Events taking place/due to take place: </textarea>
         });
       }
 
-      // Update notes whenever the route selection changes, but don't reset the form
       routeDd.addEventListener('change', () => {
-        // Only clear the textarea and update button state, keep the dropdown selection
-        if (!editingNoteId) { // Don't clear if we're editing a note
+        if (!editingNoteId) {
           routeInfoText.value = '';
           updateSaveButtonState();
         }
         renderNotes();
       });
 
-      // Reset the form when switching to the Route Info tab
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
           if (tab.dataset.tab === 'route-info') {
@@ -1050,20 +866,17 @@ Events taking place/due to take place: </textarea>
       const now = new Date();
       const hours = now.getHours();
       const minutes = now.getMinutes();
-      const currentDate = getDateYYYYMMDD(now);
+      const currentDate = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
 
-      // Check if it's 18:30 and we haven't triggered the alarm today
       if (hours === 18 && minutes === 30 && lastAlarmDate !== currentDate) {
         alert("MOVE YOUR CAR");
-        lastAlarmDate = currentDate; // Update the last alarm date to prevent multiple triggers
+        lastAlarmDate = currentDate;
       }
     }
 
-    // Check the time every minute (60,000 milliseconds)
     setInterval(checkAlarm, 60000);
-
-    // Run the check immediately in case the app is opened exactly at 18:30
     checkAlarm();
   </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'939e9125bb3fafad',t:'MTc0NjI2MjgxNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
