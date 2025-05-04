@@ -8,8 +8,6 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <!-- Including PapaParse for CSV parsing -->
-  <script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
   <style>
     body {
       background: #2c0078;
@@ -77,15 +75,6 @@
     .route-note .delete-btn { background: #ff4444; color: #fff; }
     .route-note .edit-btn { background: #44b261; color: #fff; }
     .route-note .timestamp { font-size: 0.85rem; color: #666; }
-    /* Styles for the Duty Roster table and navigation */
-    .schedule-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #ede7fd; border-radius: 6px; }
-    .schedule-table th, .schedule-table td { padding: 10px; text-align: left; font-size: 0.95rem; color: #36297d; border-bottom: 1px solid #d3d3d3; }
-    .schedule-table th { background: #d3d3d3; font-weight: 600; color: #2c0078; }
-    .schedule-table tr:last-child td { border-bottom: none; }
-    .schedule-table tr:hover { background: #e0d9f5; }
-    .search-bar { width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem; margin-bottom: 10px; background: #faf7ff; color: #2c0078; }
-    .loading-message { text-align: center; padding: 20px; color: #36297d; font-size: 1rem; }
-    .navigation-buttons { margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px; }
     @media (max-width: 600px) {
       .container {padding: 12px 2vw; max-width: 100vw;}
       .logo {width: 48vw; max-width: 225px;}
@@ -95,8 +84,6 @@
       textarea { height: 80px; }
       .route-note p { font-size: 0.9rem; }
       .route-note .delete-btn, .route-note .edit-btn { padding: 3px 6px; font-size: 0.85rem; }
-      .schedule-table th, .schedule-table td { padding: 8px; font-size: 0.9rem; }
-      .search-bar { padding: 8px 10px; font-size: 0.9rem; }
     }
   </style>
 </head>
@@ -148,26 +135,19 @@
       </div>
     </div>
 
-    <!-- Tab 2: Duty Roster (Updated with 14-Day Search by Name and Next 2 Weeks Button) -->
+    <!-- Tab 2: Duty Roster -->
     <div class="tab-content" id="tab-roster">
-      <label for="searchSchedule">Search Schedule</label>
-      <input type="text" id="searchSchedule" class="search-bar" placeholder="Search by Name...">
-      <div id="scheduleDisplay">
-        <div id="loadingMessage" class="loading-message">Loading schedule data...</div>
-        <table id="scheduleTable" class="schedule-table" style="display: none;">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Date</th>
-              <th>Duty</th>
-            </tr>
-          </thead>
-          <tbody id="scheduleTableBody"></tbody>
-        </table>
+      <div class="actions" style="margin-top:0;margin-bottom:17px;">
+        <button id="showBulkDuty">Add My Duties for Month</button>
       </div>
-      <div class="navigation-buttons">
-        <button id="nextDayBtn" style="display: none;">Next Day</button>
-        <button id="nextTwoWeeksBtn" style="display: none;">Next 2 Weeks</button>
+      <div id="bulkDutyFormArea"></div>
+      <div style="margin-top:9px;">
+        <label for="view-date">Who's Working (choose a date):</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="date" id="view-date" style="flex:1;">
+          <button id="refreshDuties" style="padding:8px 16px;background:#ff44d0;color:#fff;border-radius:6px;font-size:0.95rem;">Refresh</button>
+        </div>
+        <ul class="duty-list" id="dutyList"></ul>
       </div>
     </div>
 
@@ -463,6 +443,11 @@ Events taking place/due to take place: </textarea>
         tabContents.forEach(tc => tc.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+        
+        // When switching to Duty Roster tab, set date to current day
+        if (tab.dataset.tab === 'roster') {
+          setCurrentDate();
+        }
       });
     });
 
@@ -495,193 +480,329 @@ Events taking place/due to take place: </textarea>
       }
     });
 
-    // --------- Duty Roster Logic (Updated with 14-Day Search by Name and Next 2 Weeks Button) -----------
-    let scheduleData = [];
-    let filteredData = [];
-    let currentDateIndex = 0;
-    let allDates = [];
-    let searchMode = 'default'; // 'default' or 'nameSearch'
-    let currentName = '';
-    let currentDateRangeStart = null; // For tracking the 14-day range start date
-    const searchInput = document.getElementById('searchSchedule');
-    const scheduleTable = document.getElementById('scheduleTable');
-    const scheduleTableBody = document.getElementById('scheduleTableBody');
-    const loadingMessage = document.getElementById('loadingMessage');
-    const nextDayBtn = document.getElementById('nextDayBtn');
-    const nextTwoWeeksBtn = document.getElementById('nextTwoWeeksBtn');
+    // --------- Duty Roster Logic -----------
+    // Google Form URL and field IDs
+    const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeQ91haVeFLxHLn1WrwGWNM0vpmAoDfbjaS1AihHYI9s6STOA/formResponse";
+    const FORM_FIELD_NAME = "entry.1178796916";
+    const FORM_FIELD_DATE = "entry.1742102276";
+    const FORM_FIELD_DUTY = "entry.694160622";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxk_Vyvau86TDQVD1Z4MXEH-ySdTeaBuMUT3N08lc7ibE8gRGc9dXnyVkB3QIzJ9l_d/exec";
 
-    // Parse date from string to Date object
-    function parseDate(dateStr) {
-      const parts = dateStr.match(/(\w+)\s(\d+)(?:th|st|nd|rd)\s(\w+)/);
-      if (!parts) return null;
-      const [, dayOfWeek, day, month] = parts;
-      const year = new Date().getFullYear(); // Assuming current year
-      return new Date(`${day} ${month} ${year}`);
+    function pad(n) { return n < 10 ? '0' + n : n; }
+    function getDateYYYYMMDD(date) {
+      return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+    }
+    function dateToDisplay(date) {
+      const d = new Date(date);
+      return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+    }
+    function getNextSaturday() {
+      let d = new Date();
+      let day = d.getDay();
+      let diff = (6 - day);
+      let nextSat = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
+      return nextSat;
+    }
+    function setDateLimits() {
+      let today = new Date();
+      let nextSat = getNextSaturday();
+      let minStr = getDateYYYYMMDD(today);
+      let maxDay = new Date(nextSat.getFullYear(), nextSat.getMonth(), nextSat.getDate() + 13);
+      let maxStr = getDateYYYYMMDD(maxDay);
+
+      document.getElementById('view-date').setAttribute('min', minStr);
+      document.getElementById('view-date').setAttribute('max', maxStr);
+    }
+    function setCurrentDate() {
+      let today = new Date();
+      document.getElementById('view-date').value = getDateYYYYMMDD(today);
+      showEntriesForDate(getDateYYYYMMDD(today));
+    }
+    setDateLimits();
+    setCurrentDate(); // Set initial date to today
+
+    // ---- Duty Dropdown Helper ----
+    function getDutyOptionsHtml(selectedValue) {
+      const duties = [];
+      for (let i = 1; i <= 10; i++) {
+        duties.push(`FW${i}E`);
+        duties.push(`FW${i}L`);
+      }
+      duties.push('SpareE');
+      duties.push('SpareL');
+      duties.push('RD');
+      duties.push('AH');
+      let html = '<option value="">(none)</option>';
+      for (const duty of duties) {
+        html += `<option value="${duty}" ${(selectedValue === duty) ? "selected" : ""}>${duty}</option>`;
+      }
+      return html;
     }
 
-    // Format Date object to match the schedule format (e.g., "Sat 12th April")
-    function formatDate(date) {
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const day = date.getDate();
-      const suffix = (day % 10 === 1 && day !== 11) ? 'st' :
-                     (day % 10 === 2 && day !== 12) ? 'nd' :
-                     (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
-      return `${days[date.getDay()]} ${day}${suffix} ${months[date.getMonth()]}`;
+    // ------------ Load Duties Using Apps Script -----------------
+    async function loadEntries(dateStr) {
+      try {
+        const url = `${APPS_SCRIPT_URL}?date=${encodeURIComponent(dateStr)}`;
+        const response = await fetch(url, { mode: 'cors' });
+        if (!response.ok) throw new Error(`Network response was not ok. Status: ${response.status} ${response.statusText}`);
+        const data = await response.json();
+        console.log('Raw data from loadEntries:', data); // Debug log
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error('Error loading entries:', error.message);
+        return [];
+      }
     }
 
-    // Fetch and parse the CSV data
-    function loadScheduleData() {
-      const csvData = loadFileData("cleaned_rota_schedule.xlsx");
-      Papa.parse(csvData, {
-        header: true,
-        skipEmptyLines: true,
-        dynamicTyping: false,
-        transformHeader: (header) => header.trim().replace(/^"|"$/g, ''),
-        transform: (value, header) => value.trim().replace(/^"|"$/g, ''),
-        complete: (results) => {
-          const cleanedData = results.data.map(row => ({
-            Name: row["Name"] || '',
-            Date: row["Date"] || '',
-            Duty: row["Duty"] || ''
-          }));
-          scheduleData = cleanedData;
-
-          // Extract unique dates and sort them
-          allDates = [...new Set(scheduleData.map(row => row.Date))]
-            .map(date => ({ dateStr: date, dateObj: parseDate(date) }))
-            .filter(item => item.dateObj)
-            .sort((a, b) => a.dateObj - b.dateObj)
-            .map(item => item.dateStr);
-
-          // Set the current date index to today's date (May 3, 2025)
-          const today = new Date(2025, 4, 3); // May 3, 2025
-          const todayFormatted = formatDate(today);
-          currentDateIndex = allDates.indexOf(todayFormatted);
-          if (currentDateIndex === -1) currentDateIndex = 0; // Fallback to first date if today not found
-
-          // Initial display
-          updateScheduleDisplay();
-          loadingMessage.style.display = 'none';
-          scheduleTable.style.display = 'table';
-        },
-        error: (err) => {
-          console.error("Error parsing CSV:", err);
-          loadingMessage.textContent = 'Error loading schedule data.';
-          loadingMessage.style.color = '#d70a33';
+    // ---- Helper to Remove Duplicates ----
+    function removeDuplicateEntries(entries) {
+      const seen = new Map();
+      return entries.filter(entry => {
+        const key = `${entry.name.trim().toLowerCase()}:${entry.date.trim().toLowerCase()}:${entry.duty.trim().toLowerCase()}`;
+        if (!seen.has(key)) {
+          seen.set(key, true);
+          return true;
         }
+        return false;
       });
     }
 
-    // Update the schedule display based on the current mode
-    function updateScheduleDisplay() {
-      if (searchMode === 'default') {
-        // Default mode: Show only the current day's schedule
-        const currentDate = allDates[currentDateIndex];
-        filteredData = scheduleData.filter(row => row.Date === currentDate);
-        nextDayBtn.style.display = 'block';
-        nextTwoWeeksBtn.style.display = 'none';
-      } else if (searchMode === 'nameSearch') {
-        // Name search mode: Show the next 14 days for the searched name
-        const name = currentName.toLowerCase();
-        const dateObjects = allDates.map(date => ({ dateStr: date, dateObj: parseDate(date) }))
-          .filter(item => item.dateObj)
-          .sort((a, b) => a.dateObj - b.dateObj);
+    // ---- Show Entries for Date (Calls loadEntries) ----
+    async function showEntriesForDate(dateStr) {
+      const list = document.getElementById('dutyList');
+      list.innerHTML = '';
+      let entries = await loadEntries(dateStr);
+      
+      // Remove duplicates and log for debugging
+      entries = removeDuplicateEntries(entries);
+      console.log('Filtered entries for display:', entries); // Debug log
 
-        // Find the index of the current range start date
-        let startIndex = dateObjects.findIndex(item => item.dateStr === currentDateRangeStart);
-        if (startIndex === -1) startIndex = 0;
-
-        // Get the next 14 days starting from the current range start
-        const endIndex = Math.min(startIndex + 14, dateObjects.length);
-        const dateRange = dateObjects.slice(startIndex, endIndex).map(item => item.dateStr);
-
-        // Filter schedule data for the name within the date range
-        filteredData = scheduleData.filter(row =>
-          row.Name.toLowerCase() === name &&
-          dateRange.includes(row.Date)
-        );
-
-        // Show/hide buttons
-        nextDayBtn.style.display = 'none';
-        nextTwoWeeksBtn.style.display = endIndex < dateObjects.length ? 'block' : 'none';
+      if (entries.length === 0) {
+        list.innerHTML = '<li>No duties recorded for this date.</li>';
+      } else {
+        entries.sort((a, b) => a.name.localeCompare(b.name));
+        entries.forEach(e => {
+          const li = document.createElement('li');
+          li.textContent = `${e.name}: ${e.duty}`;
+          list.appendChild(li);
+        });
       }
-
-      renderScheduleTable();
     }
 
-    // Render the schedule table
-    function renderScheduleTable() {
-      scheduleTableBody.innerHTML = '';
-      if (filteredData.length === 0) {
-        scheduleTableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No schedule available.</td></tr>';
+    document.getElementById('view-date').addEventListener('change', function() {
+      showEntriesForDate(this.value);
+    });
+
+    document.getElementById('refreshDuties').addEventListener('click', () => {
+      const dateInput = document.getElementById('view-date').value;
+      if (dateInput) {
+        showEntriesForDate(dateInput);
+      }
+    });
+
+    // ---- Month Selection Helper ----
+    function getMonthOptions() {
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth(); // 0-11
+      let options = [];
+      // Generate options for the past 12 months and next 12 months
+      for (let i = -12; i <= 12; i++) {
+        const date = new Date(currentYear, currentMonth + i, 1);
+        const year = date.getFullYear();
+        const month = date.getMonth(); // 0-11
+        const monthName = date.toLocaleString('en-GB', { month: 'long' });
+        const value = `${year}-${pad(month + 1)}`; // Format: YYYY-MM
+        options.push({ value, label: `${monthName} ${year}` });
+      }
+      return options;
+    }
+
+    function populateMonthDropdown(dropdownId, defaultValue) {
+      const dropdown = document.getElementById(dropdownId);
+      const options = getMonthOptions();
+      dropdown.innerHTML = '<option value="">Select a month…</option>';
+      options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        if (opt.value === defaultValue) {
+          option.selected = true;
+        }
+        dropdown.appendChild(option);
+      });
+    }
+
+    // ---- Bulk Form Logic (Updated for Full Month) ----
+    document.getElementById('showBulkDuty').addEventListener('click', function() {
+      showBulkForm();
+    });
+
+    function showBulkForm() {
+      let area = document.getElementById('bulkDutyFormArea');
+      let html = `
+      <div class="duty-bulk-form">
+        <label for="bulk-month">Select Month</label>
+        <select id="bulk-month"></select>
+        <div id="bulkDutyTable"></div>
+        <div class="actions" style="margin-top:17px;">
+          <button id="saveDuties" type="button">Save All Duties</button>
+          <button id="clearForm" type="button" style="margin-left:12px;background:#ff4444;color:#fff;">Clear Form</button>
+          <button id="cancelBulk" type="button" style="margin-left:12px;background:#bbb;color:#2c0078;">Cancel</button>
+        </div>
+        <div id="submitStatus" style="margin:7px 0 0 0;font-size:0.98em;"></div>
+      </div>
+      `;
+      area.innerHTML = html;
+
+      // Populate the month dropdown with the current month as default
+      const today = new Date();
+      const defaultMonth = `${today.getFullYear()}-${pad(today.getMonth() + 1)}`;
+      populateMonthDropdown('bulk-month', defaultMonth);
+
+      // Update the table when the month changes
+      document.getElementById('bulk-month').addEventListener('change', function() {
+        updateBulkDutyTable(this.value);
+      });
+
+      // Initial table population
+      updateBulkDutyTable(defaultMonth);
+
+      document.getElementById('cancelBulk').onclick = () => { area.innerHTML = ''; };
+
+      // Clear form button logic
+      document.getElementById('clearForm').onclick = () => {
+        document.getElementById('bulk-name').value = '';
+        const selects = document.querySelectorAll('#bulkDutyTable select');
+        selects.forEach(select => {
+          select.value = '';
+        });
+        document.getElementById('submitStatus').textContent = '';
+      };
+    }
+
+    async function updateBulkDutyTable(monthValue) {
+      if (!monthValue) {
+        document.getElementById('bulkDutyTable').innerHTML = '<p>Please select a month.</p>';
         return;
       }
-      filteredData.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${row.Name}</td>
-          <td>${row.Date}</td>
-          <td>${row.Duty}</td>
-        `;
-        scheduleTableBody.appendChild(tr);
-      });
-    }
 
-    // Handle search functionality
-    searchInput.addEventListener('input', (e) => {
-      const term = e.target.value.trim().toLowerCase();
-      if (term === '') {
-        // If search is cleared, revert to default mode
-        searchMode = 'default';
-        currentName = '';
-        currentDateRangeStart = null;
-        const today = new Date(2025, 4, 3); // May 3, 2025
-        const todayFormatted = formatDate(today);
-        currentDateIndex = allDates.indexOf(todayFormatted);
-        if (currentDateIndex === -1) currentDateIndex = 0;
-      } else {
-        // Search by name: Show next 14 days
-        searchMode = 'nameSearch';
-        currentName = term;
-        // Set the range start to the earliest date in the schedule
-        currentDateRangeStart = allDates[0];
+      const [year, month] = monthValue.split('-').map(Number); // e.g., "2025-04" -> [2025, 4]
+      const startDate = new Date(year, month - 1, 1); // Month is 0-indexed in JS
+      const endDate = new Date(year, month, 0); // Last day of the month
+      const daysInMonth = endDate.getDate();
+      let days = [];
+
+      // Generate all dates in the month
+      for (let i = 1; i <= daysInMonth; i++) {
+        let d = new Date(year, month - 1, i);
+        days.push({
+          date: getDateYYYYMMDD(d),
+          display: dateToDisplay(d)
+        });
       }
-      updateScheduleDisplay();
-    });
 
-    // Handle next day button
-    nextDayBtn.addEventListener('click', () => {
-      currentDateIndex = (currentDateIndex + 1) % allDates.length; // Cycle through dates
-      updateScheduleDisplay();
-    });
+      // Fetch existing duties for the entire month to prevent duplicates
+      let existingEntries = [];
+      for (const day of days) {
+        const entries = await loadEntries(day.date);
+        existingEntries = existingEntries.concat(entries);
+      }
+      existingEntries = removeDuplicateEntries(existingEntries);
 
-    // Handle next 2 weeks button
-    nextTwoWeeksBtn.addEventListener('click', () => {
-      // Find the current range start index
-      const dateObjects = allDates.map(date => ({ dateStr: date, dateObj: parseDate(date) }))
-        .filter(item => item.dateObj)
-        .sort((a, b) => a.dateObj - b.dateObj);
-
-      let startIndex = dateObjects.findIndex(item => item.dateStr === currentDateRangeStart);
-      if (startIndex === -1) startIndex = 0;
-
-      // Move to the next 14-day range
-      startIndex += 14;
-      if (startIndex >= dateObjects.length) startIndex = 0; // Cycle back to the start if we reach the end
-      currentDateRangeStart = dateObjects[startIndex].dateStr;
-
-      updateScheduleDisplay();
-    });
-
-    // Load the schedule data when the Duty Roster tab is opened
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        if (tab.dataset.tab === 'roster' && scheduleData.length === 0) {
-          loadScheduleData();
-        }
+      // Build the table
+      let tableHtml = `
+        <label for="bulk-name" style="margin-top:12px;">Your Name</label>
+        <input type="text" id="bulk-name" maxlength="36" autocomplete="off" placeholder="e.g. Chris B" required>
+        <table>
+          <thead><tr><th>Date</th><th>Duty</th></tr></thead>
+          <tbody>
+      `;
+      days.forEach((d, i) => {
+        tableHtml += `
+          <tr>
+            <td><b>${d.display}</b><br><small>${d.date}</small></td>
+            <td>
+              <select id="bulk-duty-${i}">
+                ${getDutyOptionsHtml("")}
+              </select>
+            </td>
+          </tr>
+        `;
       });
-    });
+      tableHtml += `
+          </tbody>
+        </table>
+      `;
+      document.getElementById('bulkDutyTable').innerHTML = tableHtml;
+
+      // Save duties
+      document.getElementById('saveDuties').onclick = async function() {
+        let name = document.getElementById('bulk-name').value.trim();
+        if (!name) {
+          alert('Please enter your name.');
+          return;
+        }
+        let newEntries = [];
+        for (let i = 0; i < days.length; i++) {
+          let dutySel = document.getElementById('bulk-duty-' + i);
+          let duty = dutySel.value;
+          if (duty) {
+            // Check if this entry already exists
+            const entryExists = existingEntries.some(
+              entry => entry.name.trim().toLowerCase() === name.toLowerCase() &&
+                       entry.date.trim().toLowerCase() === days[i].date.toLowerCase() &&
+                       entry.duty.trim().toLowerCase() === duty.toLowerCase()
+            );
+            if (!entryExists) {
+              newEntries.push({ name, date: days[i].date, duty });
+            }
+          }
+        }
+        if (newEntries.length === 0) {
+          alert("No new duties to save. All entered duties already exist or no duties were entered.");
+          return;
+        }
+
+        let submitStatus = document.getElementById('submitStatus');
+        submitStatus.textContent = "Submitting to rota sheet…";
+        submitStatus.style.color = "#836cf4";
+        let successCount = 0;
+        for (let entry of newEntries) {
+          const formData = new FormData();
+          formData.append(FORM_FIELD_NAME, entry.name);
+          formData.append(FORM_FIELD_DATE, entry.date);
+          formData.append(FORM_FIELD_DUTY, entry.duty);
+          try {
+            const response = await fetch(GOOGLE_FORM_URL, {
+              method: 'POST',
+              body: formData,
+              mode: 'no-cors'
+            });
+            successCount++;
+            // Add to existingEntries to prevent future duplicates
+            existingEntries.push(entry);
+          } catch (error) {
+            console.error('Error submitting duty:', error);
+            submitStatus.textContent = "❌ Error saving to rota sheet.";
+            submitStatus.style.color = "#d70a33";
+            return;
+          }
+        }
+        if (successCount === newEntries.length) {
+          submitStatus.textContent = "✅ Rota duties saved to rota sheet!";
+          submitStatus.style.color = "#44b261";
+          setTimeout(() => { document.getElementById('bulkDutyFormArea').innerHTML = ''; }, 1200);
+          let currView = document.getElementById('view-date').value;
+          if (currView && newEntries.some(en => en.date === currView)) {
+            showEntriesForDate(currView);
+          }
+        } else {
+          submitStatus.textContent = "❌ Some duties failed to save.";
+          submitStatus.style.color = "#d70a33";
+        }
+      };
+    }
 
     // --------- Toilet Codes Logic -----------
     const toiletCodesData = [
@@ -929,7 +1050,7 @@ Events taking place/due to take place: </textarea>
       const now = new Date();
       const hours = now.getHours();
       const minutes = now.getMinutes();
-      const currentDate = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+      const currentDate = getDateYYYYMMDD(now);
 
       // Check if it's 18:30 and we haven't triggered the alarm today
       if (hours === 18 && minutes === 30 && lastAlarmDate !== currentDate) {
@@ -938,13 +1059,11 @@ Events taking place/due to take place: </textarea>
       }
     }
 
-    function pad(n) { return n < 10 ? '0' + n : n; }
-
     // Check the time every minute (60,000 milliseconds)
     setInterval(checkAlarm, 60000);
 
     // Run the check immediately in case the app is opened exactly at 18:30
     checkAlarm();
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'939ed28e8b8abf9a',t:'MTc0NjI2NTQ5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
