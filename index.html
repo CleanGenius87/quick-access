@@ -34,7 +34,7 @@
     .tab-content.active { display: block; }
     .dropdown-section, .duty-form-section { width: 100%; margin-bottom: 24px; }
     label { font-weight: bold; margin-bottom: 8px; display: block; font-size: 1.05rem; color: #2c0078;}
-    select, input[type="text"], input[type="date"], textarea {
+    select, input[type="text"], input[type="time"], textarea {
       width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
       margin-bottom: 6px; background: #faf7ff; color: #2c0078; font-family: 'Montserrat', Arial, sans-serif;
     }
@@ -82,6 +82,13 @@
     .push-options.active {
       display: block;
     }
+    .driving-hours-section {
+      margin-top: 20px; padding: 10px; background: #ede7fd; border-radius: 6px; width: 100%;
+    }
+    .driving-hours-section h3 { margin: 0 0 10px 0; font-size: 1.1rem; color: #2c0078; }
+    .trip-inputs { margin-bottom: 15px; }
+    .trip-inputs label { font-size: 0.95rem; }
+    .trip-input { margin-bottom: 10px; }
     @media (max-width: 600px) {
       .container {padding: 12px 2vw; max-width: 100vw;}
       .logo {width: 48vw; max-width: 225px;}
@@ -103,6 +110,7 @@
       <div class="tab" data-tab="toilet">Toilet Codes</div>
       <div class="tab" data-tab="handover">Midnight Handover</div>
       <div class="tab" data-tab="route-info">Route Info</div>
+      <div class="tab" data-tab="driving-hours">Driving Hours</div>
     </div>
     <!-- Tab 1: Quick Access -->
     <div class="tab-content active" id="tab-access">
@@ -422,6 +430,22 @@ Events taking place/due to take place: </textarea>
       </div>
     </div>
 
+    <!-- Tab 6: Driving Hours -->
+    <div class="tab-content" id="tab-driving-hours">
+      <div class="driving-hours-section">
+        <h3>Driving Hours Calculator</h3>
+        <div class="trip-inputs">
+          <h4 id="current-spell">First Spell</h4>
+          <div id="current-input"></div>
+        </div>
+        <div class="actions">
+          <button id="break-spell" style="display: none;">Break</button>
+          <button id="calculate-driving-time" style="display: none;">Calculate</button>
+        </div>
+        <div id="driving-time-result" style="margin-top: 10px; font-size: 1.1rem; color: #2c0078;"></div>
+      </div>
+    </div>
+
     <div class="footer">
       © First Bus – Quick Access Portal
     </div>
@@ -454,6 +478,10 @@ Events taking place/due to take place: </textarea>
         // When switching to Duty Roster tab, set date to current day
         if (tab.dataset.tab === 'roster') {
           setCurrentDate();
+        }
+        // When switching to Driving Hours tab, reset the calculator
+        if (tab.dataset.tab === 'driving-hours') {
+          resetDrivingHoursCalculator();
         }
       });
     });
@@ -1151,6 +1179,206 @@ Events taking place/due to take place: </textarea>
       });
     }
     loadRouteNotes();
+
+    // --------- Driving Hours Calculator Logic -----------
+    const currentInputDiv = document.getElementById('current-input');
+    const breakSpellBtn = document.getElementById('break-spell');
+    const calculateBtn = document.getElementById('calculate-driving-time');
+    const resultDiv = document.getElementById('driving-time-result');
+    const currentSpellHeader = document.getElementById('current-spell');
+
+    // State management
+    let currentSpell = 'first'; // 'first', 'break', 'second'
+    let currentTrip = 1; // 1 to 6
+    let currentStage = 'start'; // 'start', 'end', 'break-start', 'break-end'
+    let tripData = {
+      first: Array(6).fill().map(() => ({ start: null, end: null })),
+      second: Array(6).fill().map(() => ({ start: null, end: null })),
+      break: { start: null, end: null }
+    };
+
+    function resetDrivingHoursCalculator() {
+      currentSpell = 'first';
+      currentTrip = 1;
+      currentStage = 'start';
+      tripData = {
+        first: Array(6).fill().map(() => ({ start: null, end: null })),
+        second: Array(6).fill().map(() => ({ start: null, end: null })),
+        break: { start: null, end: null }
+      };
+      currentSpellHeader.textContent = 'First Spell';
+      breakSpellBtn.style.display = 'none';
+      calculateBtn.style.display = 'none';
+      resultDiv.textContent = '';
+      renderCurrentInput();
+    }
+
+    function renderCurrentInput() {
+      currentInputDiv.innerHTML = '';
+
+      if (currentSpell === 'break') {
+        const labelText = currentStage === 'break-start' ? 'Break Start Time' : 'Break End Time';
+        currentInputDiv.innerHTML = `
+          <div class="trip-input">
+            <label>${labelText}</label>
+            <input type="text" id="current-time-input" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" placeholder="HH:MM" required>
+          </div>
+        `;
+      } else {
+        const spellText = currentSpell === 'first' ? 'First' : 'Second';
+        const labelText = currentStage === 'start' ? `Trip ${currentTrip} Start` : `Trip ${currentTrip} End`;
+        currentInputDiv.innerHTML = `
+          <div class="trip-input">
+            <label>${spellText} Spell - ${labelText}</label>
+            <input type="text" id="current-time-input" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" placeholder="HH:MM" required>
+          </div>
+        `;
+        // Show Break button after the first trip's end time is entered
+        if (currentSpell === 'first' && (currentTrip > 1 || currentStage === 'end')) {
+          breakSpellBtn.style.display = 'inline-block';
+        }
+        // Show Calculate button after the second spell's first trip starts
+        if (currentSpell === 'second' && (currentTrip > 1 || currentStage !== 'start')) {
+          calculateBtn.style.display = 'inline-block';
+        }
+      }
+
+      const timeInput = document.getElementById('current-time-input');
+      timeInput.focus(); // Automatically focus the input field
+
+      // Add input event listener for real-time formatting and validation
+      timeInput.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/[^0-9]/g, ''); // Remove non-numeric characters
+        if (value.length > 2) {
+          value = value.slice(0, 2) + ':' + value.slice(2); // Add colon after first two digits
+        }
+        e.target.value = value.slice(0, 5); // Limit to HH:MM format
+      });
+
+      // Handle form submission on change (when the user finishes entering the time)
+      timeInput.addEventListener('change', handleTimeInput);
+    }
+
+    function handleTimeInput() {
+      const timeInput = document.getElementById('current-time-input');
+      let timeValue = timeInput.value;
+
+      // Ensure the time is in HH:MM format
+      if (!timeValue || !/^[0-2][0-9]:[0-5][0-9]$/.test(timeValue)) {
+        alert('Please enter a valid time in HH:MM format.');
+        timeInput.value = '';
+        timeInput.focus();
+        return;
+      }
+
+      if (currentSpell === 'break') {
+        tripData.break[currentStage === 'break-start' ? 'start' : 'end'] = timeValue;
+        if (currentStage === 'break-start') {
+          currentStage = 'break-end';
+          renderCurrentInput();
+        } else {
+          currentSpell = 'second';
+          currentTrip = 1;
+          currentStage = 'start';
+          currentSpellHeader.textContent = 'Second Spell';
+          breakSpellBtn.style.display = 'none';
+          renderCurrentInput();
+        }
+      } else {
+        const spellData = tripData[currentSpell];
+        if (currentStage === 'start') {
+          spellData[currentTrip - 1].start = timeValue;
+          currentStage = 'end';
+        } else if (currentStage === 'end') {
+          spellData[currentTrip - 1].end = timeValue;
+          if (currentTrip < 6) {
+            currentTrip++;
+            currentStage = 'start';
+          } else if (currentSpell === 'second') {
+            calculateDrivingTime();
+            return;
+          }
+        }
+        renderCurrentInput();
+      }
+    }
+
+    breakSpellBtn.addEventListener('click', () => {
+      if (currentSpell === 'first') {
+        currentSpell = 'break';
+        currentStage = 'break-start';
+        currentSpellHeader.textContent = 'Break';
+        breakSpellBtn.style.display = 'none';
+        renderCurrentInput();
+      }
+    });
+
+    function calculateDrivingTime() {
+      const breakStart = tripData.break.start;
+      const breakEnd = tripData.break.end;
+
+      if (!breakStart || !breakEnd) {
+        resultDiv.textContent = 'Please fill in the break times.';
+        return;
+      }
+
+      // Convert times to minutes since midnight for calculation
+      function timeToMinutes(time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+      }
+
+      // Calculate break time
+      let breakTime = timeToMinutes(breakEnd) - timeToMinutes(breakStart);
+      if (breakTime < 0) breakTime += 1440; // Handle day transition
+
+      // Process trips for first and second halves
+      let totalDrivingTime = 0;
+      let totalStandTime = 0;
+
+      ['first', 'second'].forEach(half => {
+        const trips = tripData[half];
+        trips.forEach((trip, index) => {
+          if (trip.start && trip.end) {
+            let startMin = timeToMinutes(trip.start);
+            let endMin = timeToMinutes(trip.end);
+
+            // Calculate trip duration
+            let tripDuration = endMin - startMin;
+            if (tripDuration < 0) tripDuration += 1440;
+
+            totalDrivingTime += tripDuration;
+
+            // Calculate stand time (time between this trip's end and the next trip's start)
+            if (index < trips.length - 1 && trips[index + 1].start) {
+              let nextStartMin = timeToMinutes(trips[index + 1].start);
+              let standDuration = nextStartMin - endMin;
+              if (standDuration < 0) standDuration += 1440;
+              totalStandTime += standDuration;
+            }
+          }
+        });
+      });
+
+      // Subtract break time from total driving time
+      totalDrivingTime -= breakTime;
+      if (totalDrivingTime < 0) totalDrivingTime = 0;
+
+      // Convert to hours and minutes
+      const drivingHours = Math.floor(totalDrivingTime / 60);
+      const drivingMinutes = totalDrivingTime % 60;
+      const standHours = Math.floor(totalStandTime / 60);
+      const standMinutes = totalStandTime % 60;
+      const breakHours = Math.floor(breakTime / 60);
+      const breakMinutes = breakTime % 60;
+
+      resultDiv.textContent = `Total Driving Time: ${drivingHours}h ${drivingMinutes}m (Excludes ${standHours}h ${standMinutes}m of stand time and ${breakHours}h ${breakMinutes}m of break time)`;
+    }
+
+    calculateBtn.addEventListener('click', calculateDrivingTime);
+
+    // Initialize the calculator
+    renderCurrentInput();
 
     // --------- Hidden Alarm Feature: Trigger at 18:30 Daily -----------
     let lastAlarmDate = null;
