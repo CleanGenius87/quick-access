@@ -68,13 +68,20 @@
     .route-note { border-bottom: 1px solid #d3d3d3; padding: 8px 0; position: relative; }
     .route-note:last-child { border-bottom: none; }
     .route-note p { margin: 4px 0; font-size: 0.95rem; color: #36297d; }
-    .route-note .delete-btn, .route-note .edit-btn {
+    .route-note .delete-btn, .route-note .edit-btn, .route-note .copy-btn, .route-note .push-btn {
       border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.9rem; cursor: pointer;
       position: static; display: inline-block; margin-top: 8px; margin-right: 8px;
     }
     .route-note .delete-btn { background: #ff4444; color: #fff; }
     .route-note .edit-btn { background: #44b261; color: #fff; }
-    .route-note .timestamp { font-size: 0.85rem; color: #666; }
+    .route-note .copy-btn { background: #4a90e2; color: #fff; }
+    .route-note .push-btn { background: #ff44d0; color: #fff; }
+    .push-options {
+      display: none; margin-top: 10px; width: 100%;
+    }
+    .push-options.active {
+      display: block;
+    }
     @media (max-width: 600px) {
       .container {padding: 12px 2vw; max-width: 100vw;}
       .logo {width: 48vw; max-width: 225px;}
@@ -83,7 +90,7 @@
       .handover-content textarea { height: 300px; font-size: 0.9rem; }
       textarea { height: 80px; }
       .route-note p { font-size: 0.9rem; }
-      .route-note .delete-btn, .route-note .edit-btn { padding: 3px 6px; font-size: 0.85rem; }
+      .route-note .delete-btn, .route-note .edit-btn, .route-note .copy-btn, .route-note .push-btn { padding: 3px 6px; font-size: 0.85rem; }
     }
   </style>
 </head>
@@ -997,6 +1004,46 @@ Events taking place/due to take place: </textarea>
             <p class="timestamp">Posted: ${date.toLocaleString()}</p>
             <button class="edit-btn" data-id="${note.id}">Edit</button>
             <button class="delete-btn" data-id="${note.id}">Delete</button>
+            <button class="copy-btn" data-id="${note.id}">Copy</button>
+            <button class="push-btn" data-id="${note.id}">Push</button>
+            <div class="push-options" id="push-options-${note.id}">
+              <label for="push-routes-${note.id}">Select Routes to Push:</label>
+              <select id="push-routes-${note.id}" multiple>
+                <option value="33">33</option>
+                <option value="65">65</option>
+                <option value="71">71</option>
+                <option value="85">85</option>
+                <option value="105">105</option>
+                <option value="110">110</option>
+                <option value="116">116</option>
+                <option value="117">117</option>
+                <option value="203">203</option>
+                <option value="216">216</option>
+                <option value="235">235</option>
+                <option value="281">281</option>
+                <option value="290">290</option>
+                <option value="293">293</option>
+                <option value="371">371</option>
+                <option value="406">406</option>
+                <option value="411">411</option>
+                <option value="418">418</option>
+                <option value="419">419</option>
+                <option value="423">423</option>
+                <option value="467">467</option>
+                <option value="H22">H22</option>
+                <option value="H37">H37</option>
+                <option value="H98">H98</option>
+                <option value="K1">K1</option>
+                <option value="K2">K2</option>
+                <option value="K3">K3</option>
+                <option value="K4">K4</option>
+                <option value="K5">K5</option>
+              </select>
+              <div class="actions" style="margin-top: 10px;">
+                <button class="confirm-push" data-id="${note.id}">Confirm Push</button>
+                <button class="cancel-push" data-id="${note.id}">Cancel</button>
+              </div>
+            </div>
           `;
           routeNotesList.appendChild(noteDiv);
 
@@ -1016,6 +1063,68 @@ Events taking place/due to take place: </textarea>
               .catch(error => {
                 console.error('Error deleting note:', error);
                 alert('Failed to delete note.');
+              });
+          });
+
+          // Add copy functionality
+          noteDiv.querySelector('.copy-btn').addEventListener('click', () => {
+            const textToCopy = `Route ${note.route}: ${note.info}\nPosted: ${date.toLocaleString()}`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+              const copyBtn = noteDiv.querySelector('.copy-btn');
+              copyBtn.textContent = 'Copied!';
+              copyBtn.style.background = '#44b261';
+              setTimeout(() => {
+                copyBtn.textContent = 'Copy';
+                copyBtn.style.background = '#4a90e2';
+              }, 2000);
+            }).catch(err => {
+              console.error('Failed to copy text: ', err);
+              alert('Failed to copy note.');
+            });
+          });
+
+          // Add push functionality
+          noteDiv.querySelector('.push-btn').addEventListener('click', () => {
+            const pushOptions = noteDiv.querySelector('.push-options');
+            pushOptions.classList.add('active');
+          });
+
+          // Cancel push
+          noteDiv.querySelector('.cancel-push').addEventListener('click', () => {
+            const pushOptions = noteDiv.querySelector('.push-options');
+            pushOptions.classList.remove('active');
+          });
+
+          // Confirm push
+          noteDiv.querySelector('.confirm-push').addEventListener('click', () => {
+            const pushRoutesSelect = noteDiv.querySelector(`#push-routes-${note.id}`);
+            const selectedRoutes = Array.from(pushRoutesSelect.selectedOptions).map(option => option.value);
+            if (selectedRoutes.length === 0) {
+              alert('Please select at least one route to push.');
+              return;
+            }
+
+            const noteData = {
+              route: note.route,
+              info: note.info,
+              timestamp: Date.now()
+            };
+
+            const updates = {};
+            selectedRoutes.forEach(route => {
+              const newNoteRef = database.ref('route-info').push();
+              updates[newNoteRef.key] = { ...noteData, route: route };
+            });
+
+            database.ref().update(updates)
+              .then(() => {
+                const pushOptions = noteDiv.querySelector('.push-options');
+                pushOptions.classList.remove('active');
+                alert(`Note pushed to ${selectedRoutes.length} route(s) successfully.`);
+              })
+              .catch(error => {
+                console.error('Error pushing note:', error);
+                alert('Failed to push note.');
               });
           });
         });
@@ -1065,5 +1174,5 @@ Events taking place/due to take place: </textarea>
     // Run the check immediately in case the app is opened exactly at 18:30
     checkAlarm();
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93b73d26195f44d1',t:'MTc0NjUyMTUxOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
