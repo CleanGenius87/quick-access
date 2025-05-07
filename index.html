@@ -49,7 +49,7 @@
     .noe-list { margin-top: 20px; margin-bottom: 8px; padding-left: 0px; list-style:none;}
     .noe-list li { background: #ede7fd; border-radius: 6px; padding: 9px 14px 7px 14px; margin-bottom: 9px;
       font-size: 1rem; font-weight: 500; color: #36297d; display: flex; justify-content: space-between; align-items: center;}
-    .noe-list a { color: #ff44d0; melanin: none; }
+    .noe-list a { color: #ff44d0; text-decoration: none; }
     .noe-list button { padding: 5px 10px; min-width: 80px; }
     .footer { color: #faf7ff99; text-align: center; font-size: 0.93rem; margin-top: 48px;}
     .toilet-codes { margin-top: 20px; padding: 10px; background: #ede7fd; border-radius: 6px; }
@@ -525,7 +525,6 @@ Events taking place/due to take place: </textarea>
       const file = noeFileInput.files[0];
       if (!file) return;
 
-      // Validate file type and size (e.g., max 5MB)
       if (file.type !== 'application/pdf') {
         alert('Please upload a PDF file.');
         return;
@@ -535,7 +534,6 @@ Events taking place/due to take place: </textarea>
         return;
       }
 
-      // Create a unique filename with timestamp
       const timestamp = Date.now();
       const fileName = `noe_${timestamp}_${file.name}`;
       const storageRef = storage.ref(`noes/${fileName}`);
@@ -543,11 +541,11 @@ Events taking place/due to take place: </textarea>
       uploadNoeBtn.disabled = true;
       uploadNoeBtn.textContent = 'Uploading...';
 
-      // Upload file to Firebase Storage
       storageRef.put(file).then((snapshot) => {
+        console.log("Upload snapshot:", snapshot);
         return snapshot.ref.getDownloadURL();
       }).then((downloadURL) => {
-        // Save metadata to Firebase Realtime Database
+        console.log("Download URL:", downloadURL);
         const noeData = {
           fileName: file.name,
           downloadURL: downloadURL,
@@ -557,17 +555,18 @@ Events taking place/due to take place: </textarea>
       }).then(() => {
         uploadNoeBtn.textContent = 'Uploaded!';
         uploadNoeBtn.style.background = '#44b261';
-        noeFileInput.value = ''; // Clear input
+        noeFileInput.value = '';
         uploadNoeBtn.disabled = true;
         setTimeout(() => {
           uploadNoeBtn.textContent = 'Upload PDF';
           uploadNoeBtn.style.background = '#ff44d0';
         }, 2000);
-        loadNoePdfs(); // Refresh the list
+        loadNoePdfs();
       }).catch((error) => {
-        console.error('Error uploading PDF:', error);
+        console.error('Error uploading PDF:', error.message, error.code);
         uploadNoeBtn.textContent = 'Error';
         uploadNoeBtn.style.background = '#d70a33';
+        alert(`Upload failed: ${error.message}. Check console for details.`);
         setTimeout(() => {
           uploadNoeBtn.textContent = 'Upload PDF';
           uploadNoeBtn.style.background = '#ff44d0';
@@ -586,7 +585,7 @@ Events taking place/due to take place: </textarea>
         }
 
         const noeArray = Object.entries(noes).map(([id, noe]) => ({ id, ...noe }));
-        noeArray.sort((a, b) => b.timestamp - a.timestamp); // Newest first
+        noeArray.sort((a, b) => b.timestamp - a.timestamp);
 
         noeArray.forEach(noe => {
           const li = document.createElement('li');
@@ -600,11 +599,8 @@ Events taking place/due to take place: </textarea>
           `;
           noeList.appendChild(li);
 
-          // Add delete functionality
           li.querySelector('.delete-noe').addEventListener('click', () => {
-            // Delete from database
             database.ref('noes/' + noe.id).remove().then(() => {
-              // Delete from storage
               storage.refFromURL(noe.downloadURL).delete().catch(error => {
                 console.error('Error deleting file from storage:', error);
               });
@@ -634,7 +630,7 @@ Events taking place/due to take place: </textarea>
       { location: "East Acton, Telford Way", mainDoor: "", gents: "2471", ladies: "2947", keyLockBox: "" },
       { location: "Ealing Taxi/Bus Stand", mainDoor: "5116", gents: "", ladies: "", keyLockBox: "" },
       { location: "Fairfield Bus Station", mainDoor: "5+3, 2, 1", gents: "", ladies: "", keyLockBox: "" },
-      { location: "Fulwell Stanley grasses", mainDoor: "1702", gents: "1702", ladies: "C6740Z", keyLockBox: "" },
+      { location: "Fulwell Stanley Road", mainDoor: "1702", gents: "1702", ladies: "C6740Z", keyLockBox: "" },
       { location: "Great West Quarter", mainDoor: "1+5, 1", gents: "", ladies: "1+2, 4, 3", keyLockBox: "" },
       { location: "Ham", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
       { location: "Hammersmith Lower", mainDoor: "2+3, 5, 4, 1", gents: "", ladies: "", keyLockBox: "" },
