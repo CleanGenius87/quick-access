@@ -86,6 +86,17 @@
     .trip-inputs { margin-bottom: 15px; }
     .trip-inputs label { font-size: 0.95rem; }
     .trip-input { margin-bottom: 10px; }
+    .routes-checkbox-container {
+      max-height: 100px; overflow-y: auto; padding: 10px; border: 1.5px solid #2c0078;
+      border-radius: 7px; background: #faf7ff; margin-bottom: 6px;
+    }
+    .routes-checkbox-container label {
+      display: flex; align-items: center; font-weight: 500; font-size: 0.95rem; margin-bottom: 6px;
+      color: #36297d;
+    }
+    .routes-checkbox-container input[type="checkbox"] {
+      margin-right: 8px; width: 16px; height: 16px;
+    }
     @media (max-width: 600px) {
       .container {padding: 12px 2vw; max-width: 100vw;}
       .logo {width: 48vw; max-width: 225px;}
@@ -96,6 +107,8 @@
       .route-note .delete-btn, .route-note .edit-btn, .route-note .copy-btn, .route-note .push-btn { padding: 3px 6px; font-size: 0.85rem; }
       .noe-list li { flex-direction: column; align-items: flex-start; gap: 8px; }
       .noe-list button { min-width: 60px; }
+      .routes-checkbox-container { max-height: 80px; }
+      .routes-checkbox-container label { font-size: 0.9rem; }
     }
   </style>
 </head>
@@ -153,9 +166,76 @@
       <div class="noe-section">
         <label for="noeFileInput">Upload NOE PDF</label>
         <input type="file" id="noeFileInput" accept="application/pdf">
+        <label>Select Affected Routes</label>
+        <div class="routes-checkbox-container" id="noeRoutesCheckboxes">
+          <label><input type="checkbox" value="33"> 33</label>
+          <label><input type="checkbox" value="65"> 65</label>
+          <label><input type="checkbox" value="71"> 71</label>
+          <label><input type="checkbox" value="85"> 85</label>
+          <label><input type="checkbox" value="105"> 105</label>
+          <label><input type="checkbox" value="110"> 110</label>
+          <label><input type="checkbox" value="116"> 116</label>
+          <label><input type="checkbox" value="117"> 117</label>
+          <label><input type="checkbox" value="203"> 203</label>
+          <label><input type="checkbox" value="216"> 216</label>
+          <label><input type="checkbox" value="235"> 235</label>
+          <label><input type="checkbox" value="281"> 281</label>
+          <label><input type="checkbox" value="290"> 290</label>
+          <label><input type="checkbox" value="293"> 293</label>
+          <label><input type="checkbox" value="371"> 371</label>
+          <label><input type="checkbox" value="406"> 406</label>
+          <label><input type="checkbox" value="411"> 411</label>
+          <label><input type="checkbox" value="418"> 418</label>
+          <label><input type="checkbox" value="419"> 419</label>
+          <label><input type="checkbox" value="423"> 423</label>
+          <label><input type="checkbox" value="467"> 467</label>
+          <label><input type="checkbox" value="H22"> H22</label>
+          <label><input type="checkbox" value="H37"> H37</label>
+          <label><input type="checkbox" value="H98"> H98</label>
+          <label><input type="checkbox" value="K1"> K1</label>
+          <label><input type="checkbox" value="K2"> K2</label>
+          <label><input type="checkbox" value="K3"> K3</label>
+          <label><input type="checkbox" value="K4"> K4</label>
+          <label><input type="checkbox" value="K5"> K5</label>
+        </div>
         <div class="actions">
           <button id="uploadNoe" disabled>Upload PDF</button>
         </div>
+      </div>
+      <div class="dropdown-section">
+        <label for="noeFilterDropdown">Filter by Route</label>
+        <select id="noeFilterDropdown">
+          <option value="">All Routes</option>
+          <option value="33">33</option>
+          <option value="65">65</option>
+          <option value="71">71</option>
+          <option value="85">85</option>
+          <option value="105">105</option>
+          <option value="110">110</option>
+          <option value="116">116</option>
+          <option value="117">117</option>
+          <option value="203">203</option>
+          <option value="216">216</option>
+          <option value="235">235</option>
+          <option value="281">281</option>
+          <option value="290">290</option>
+          <option value="293">293</option>
+          <option value="371">371</option>
+          <option value="406">406</option>
+          <option value="411">411</option>
+          <option value="418">418</option>
+          <option value="419">419</option>
+          <option value="423">423</option>
+          <option value="467">467</option>
+          <option value="H22">H22</option>
+          <option value="H37">H37</option>
+          <option value="H98">H98</option>
+          <option value="K1">K1</option>
+          <option value="K2">K2</option>
+          <option value="K3">K3</option>
+          <option value="K4">K4</option>
+          <option value="K5">K5</option>
+        </select>
       </div>
       <div id="noeListArea">
         <ul class="noe-list" id="noeList"></ul>
@@ -514,16 +594,25 @@ Events taking place/due to take place: </textarea>
 
     // ------------ NOE's PDF Upload Logic -----------
     const noeFileInput = document.getElementById('noeFileInput');
+    const noeRoutesContainer = document.getElementById('noeRoutesCheckboxes');
     const uploadNoeBtn = document.getElementById('uploadNoe');
+    const noeFilterDd = document.getElementById('noeFilterDropdown');
     const noeList = document.getElementById('noeList');
 
-    noeFileInput.addEventListener('change', () => {
-      uploadNoeBtn.disabled = !noeFileInput.files.length;
-    });
+    function updateUploadButtonState() {
+      const hasFile = noeFileInput.files.length > 0;
+      const hasRoutes = Array.from(noeRoutesContainer.querySelectorAll('input[type="checkbox"]:checked')).length > 0;
+      uploadNoeBtn.disabled = !(hasFile && hasRoutes);
+    }
+
+    noeFileInput.addEventListener('change', updateUploadButtonState);
+    noeRoutesContainer.addEventListener('change', updateUploadButtonState);
 
     uploadNoeBtn.addEventListener('click', () => {
       const file = noeFileInput.files[0];
-      if (!file) return;
+      const selectedRoutes = Array.from(noeRoutesContainer.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value);
+      
+      if (!file || selectedRoutes.length === 0) return;
 
       if (file.type !== 'application/pdf') {
         alert('Please upload a PDF file.');
@@ -549,13 +638,15 @@ Events taking place/due to take place: </textarea>
         const noeData = {
           fileName: file.name,
           downloadURL: downloadURL,
-          timestamp: timestamp
+          timestamp: timestamp,
+          routes: selectedRoutes
         };
         return database.ref('noes').push(noeData);
       }).then(() => {
         uploadNoeBtn.textContent = 'Uploaded!';
         uploadNoeBtn.style.background = '#44b261';
         noeFileInput.value = '';
+        noeRoutesContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => checkbox.checked = false);
         uploadNoeBtn.disabled = true;
         setTimeout(() => {
           uploadNoeBtn.textContent = 'Upload PDF';
@@ -584,14 +675,28 @@ Events taking place/due to take place: </textarea>
           return;
         }
 
+        const selectedRoute = noeFilterDd.value;
         const noeArray = Object.entries(noes).map(([id, noe]) => ({ id, ...noe }));
-        noeArray.sort((a, b) => b.timestamp - a.timestamp);
+        const filteredNoes = selectedRoute
+          ? noeArray.filter(noe => noe.routes && noe.routes.includes(selectedRoute))
+          : noeArray;
 
-        noeArray.forEach(noe => {
+        filteredNoes.sort((a, b) => b.timestamp - a.timestamp);
+
+        if (filteredNoes.length === 0) {
+          noeList.innerHTML = '<li>No NOE PDFs found for this route.</li>';
+          return;
+        }
+
+        filteredNoes.forEach(noe => {
           const li = document.createElement('li');
           const date = new Date(noe.timestamp).toLocaleString();
+          const routesText = noe.routes ? noe.routes.join(', ') : 'No routes specified';
           li.innerHTML = `
-            <a href="${noe.downloadURL}" target="_blank">${noe.fileName}</a>
+            <div>
+              <a href="${noe.downloadURL}" target="_blank">${noe.fileName}</a>
+              <div><small>Routes: ${routesText}</small></div>
+            </div>
             <div>
               <small>Uploaded: ${date}</small>
               <button class="delete-noe" data-id="${noe.id}" style="background:#ff4444;">Delete</button>
@@ -612,6 +717,8 @@ Events taking place/due to take place: </textarea>
         });
       });
     }
+
+    noeFilterDd.addEventListener('change', loadNoePdfs);
 
     // --------- Toilet Codes Logic -----------
     const toiletCodesData = [
@@ -1146,5 +1253,5 @@ Events taking place/due to take place: </textarea>
     setInterval(checkAlarm, 60000);
     checkAlarm();
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93e7ac559e8ded7c',t:'MTc0NzAyOTM4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
