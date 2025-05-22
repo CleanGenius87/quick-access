@@ -35,7 +35,7 @@
     .tab-content.active { display: block; }
     .dropdown-section, .noe-section { width: 100%; margin-bottom: 24px; }
     label { font-weight: bold; margin-bottom: 8px; display: block; font-size: 1.05rem; color: #2c0078;}
-    select, input[type="text"], input[type="time"], input[type="file"], textarea {
+    select, input[type="text"], input[type="time"], input[type="file"], input[type="date"], textarea {
       width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
       margin-bottom: 6px; background: #faf7ff; color: #2c0078; font-family: 'Montserrat', Arial, sans-serif;
     }
@@ -97,6 +97,14 @@
     .routes-checkbox-container input[type="checkbox"] {
       margin-right: 8px; width: 16px; height: 16px;
     }
+    .date-inputs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .date-input {
+      flex: 1;
+    }
     @media (max-width: 600px) {
       .container {padding: 12px 2vw; max-width: 100vw;}
       .logo {width: 48vw; max-width: 225px;}
@@ -109,6 +117,10 @@
       .noe-list button { min-width: 60px; }
       .routes-checkbox-container { max-height: 80px; }
       .routes-checkbox-container label { font-size: 0.9rem; }
+      .date-inputs {
+        flex-direction: column;
+        gap: 5px;
+      }
     }
   </style>
 </head>
@@ -166,6 +178,16 @@
       <div class="noe-section">
         <label for="noeFileInput">Upload NOE PDF</label>
         <input type="file" id="noeFileInput" accept="application/pdf">
+        <div class="date-inputs">
+          <div class="date-input">
+            <label for="noeStartDate">Start Date</label>
+            <input type="date" id="noeStartDate">
+          </div>
+          <div class="date-input">
+            <label for="noeEndDate">End Date</label>
+            <input type="date" id="noeEndDate">
+          </div>
+        </div>
         <label>Select Affected Routes</label>
         <div class="routes-checkbox-container" id="noeRoutesCheckboxes">
           <label><input type="checkbox" value="33"> 33</label>
@@ -294,165 +316,70 @@
           <button id="showToiletCodes" disabled>Show Codes</button>
         </div>
       </div>
-      <div id="toiletCodesDisplay" class="toilet-codes" style="display: none;"></div>
+      <div class="toilet-codes" id="toiletCodesDisplay" style="display: none;"></div>
       <div class="contact-info">
-        For any issues, contact: 07999 405 626
+        <p>If you find any incorrect codes, please contact the Network Management Team.</p>
       </div>
     </div>
 
     <!-- Tab 4: Midnight Handover -->
     <div class="tab-content" id="tab-handover">
-      <div class="handover-content">
-        <textarea id="handoverText" readonly>Fulwell Midnight Handover
+      <div class="dropdown-section">
+        <label for="handoverText">Midnight Handover Template</label>
+        <div class="handover-content">
+          <textarea id="handoverText" readonly>MIDNIGHT HANDOVER
 
-K4, 71, 110, 116, 117, 203, 216, 235, 290, 293, 371, 406, 411, 418, 423, H22, H37, H98
+DUTY MANAGER: 
+NIGHT CONTROLLER: 
 
-Route: K4
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
+BUSES OUT OF SERVICE:
+- 
+- 
+- 
 
-Route: 71
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
+BUSES REQUIRING ATTENTION:
+- 
+- 
+- 
 
-Route: 110
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
+DRIVERS ABSENT:
+- 
+- 
+- 
 
-Route: 116
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
+DRIVERS LATE:
+- 
+- 
+- 
 
-Route: 117
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
+OUTSTANDING ISSUES:
+- 
+- 
+- 
 
-Route: 203
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
+NOTES:
+- 
+- 
+- 
 
-Route: 216
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
+BUSES PARKED IN YARD:
+- 
+- 
+- 
 
-Route: 235
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
+BUSES PARKED ON ROAD:
+- 
+- 
+- 
 
-Route: 290
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
-
-Route: 293
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
-
-Route: 371
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
-
-Route: 406
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
-
-Route: 411
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
-
-Route: 418
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
-
-Route: 423
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
-
-Route: H22
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
-
-Route: H37
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: 
-
-Route: H98
-Max delays: minutes
-Latest Bus (over stand time): 
-Non polling buses: N/A
-Missing buses (due to mechanical, incident, staff cut etc): N/A
-Late Meal Relief: N/A
-Events taking place/due to take place: </textarea>
-      </div>
-      <div class="actions" style="margin-top: 10px;">
-        <button id="copyHandoverText">Copy to Clipboard</button>
+BUSES PARKED AT HOSPITAL:
+- 
+- 
+- </textarea>
+        </div>
+        <div class="actions">
+          <button id="copyHandoverText">Copy to Clipboard</button>
+        </div>
       </div>
     </div>
 
@@ -492,13 +419,11 @@ Events taking place/due to take place: </textarea>
           <option value="K4">K4</option>
           <option value="K5">K5</option>
         </select>
-      </div>
-      <div class="dropdown-section">
-        <label for="routeInfo">Route Information (e.g., diversions, roadworks)</label>
-        <textarea id="routeInfo" placeholder="Enter information about the route…"></textarea>
-      </div>
-      <div class="actions">
-        <button id="saveRouteNote" disabled>Save Note</button>
+        <label for="routeInfo">Route Information</label>
+        <textarea id="routeInfo" placeholder="Enter route information, notes, or tips here..."></textarea>
+        <div class="actions">
+          <button id="saveRouteNote" disabled>Save Note</button>
+        </div>
       </div>
       <div id="routeNotesDisplay" class="route-notes">
         <h3>Saved Route Notes</h3>
@@ -594,6 +519,8 @@ Events taking place/due to take place: </textarea>
 
     // ------------ NOE's PDF Upload Logic -----------
     const noeFileInput = document.getElementById('noeFileInput');
+    const noeStartDate = document.getElementById('noeStartDate');
+    const noeEndDate = document.getElementById('noeEndDate');
     const noeRoutesContainer = document.getElementById('noeRoutesCheckboxes');
     const uploadNoeBtn = document.getElementById('uploadNoe');
     const noeFilterDd = document.getElementById('noeFilterDropdown');
@@ -602,17 +529,23 @@ Events taking place/due to take place: </textarea>
     function updateUploadButtonState() {
       const hasFile = noeFileInput.files.length > 0;
       const hasRoutes = Array.from(noeRoutesContainer.querySelectorAll('input[type="checkbox"]:checked')).length > 0;
-      uploadNoeBtn.disabled = !(hasFile && hasRoutes);
+      const hasStartDate = noeStartDate.value.trim() !== '';
+      const hasEndDate = noeEndDate.value.trim() !== '';
+      uploadNoeBtn.disabled = !(hasFile && hasRoutes && hasStartDate && hasEndDate);
     }
 
     noeFileInput.addEventListener('change', updateUploadButtonState);
     noeRoutesContainer.addEventListener('change', updateUploadButtonState);
+    noeStartDate.addEventListener('change', updateUploadButtonState);
+    noeEndDate.addEventListener('change', updateUploadButtonState);
 
     uploadNoeBtn.addEventListener('click', () => {
       const file = noeFileInput.files[0];
       const selectedRoutes = Array.from(noeRoutesContainer.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value);
+      const startDate = noeStartDate.value;
+      const endDate = noeEndDate.value;
       
-      if (!file || selectedRoutes.length === 0) return;
+      if (!file || selectedRoutes.length === 0 || !startDate || !endDate) return;
 
       if (file.type !== 'application/pdf') {
         alert('Please upload a PDF file.');
@@ -639,13 +572,17 @@ Events taking place/due to take place: </textarea>
           fileName: file.name,
           downloadURL: downloadURL,
           timestamp: timestamp,
-          routes: selectedRoutes
+          routes: selectedRoutes,
+          startDate: startDate,
+          endDate: endDate
         };
         return database.ref('noes').push(noeData);
       }).then(() => {
         uploadNoeBtn.textContent = 'Uploaded!';
         uploadNoeBtn.style.background = '#44b261';
         noeFileInput.value = '';
+        noeStartDate.value = '';
+        noeEndDate.value = '';
         noeRoutesContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => checkbox.checked = false);
         uploadNoeBtn.disabled = true;
         setTimeout(() => {
@@ -692,10 +629,16 @@ Events taking place/due to take place: </textarea>
           const li = document.createElement('li');
           const date = new Date(noe.timestamp).toLocaleString();
           const routesText = noe.routes ? noe.routes.join(', ') : 'No routes specified';
+          
+          // Format dates for display
+          const startDateText = noe.startDate ? new Date(noe.startDate).toLocaleDateString() : 'Not specified';
+          const endDateText = noe.endDate ? new Date(noe.endDate).toLocaleDateString() : 'Not specified';
+          
           li.innerHTML = `
             <div>
               <a href="${noe.downloadURL}" target="_blank">${noe.fileName}</a>
               <div><small>Routes: ${routesText}</small></div>
+              <div><small>Valid: ${startDateText} to ${endDateText}</small></div>
             </div>
             <div>
               <small>Uploaded: ${date}</small>
@@ -847,8 +790,7 @@ Events taking place/due to take place: </textarea>
           })
           .catch(error => {
             console.error('Error updating note:', error);
-            saveRouteNoteBtn.textContent = 'Error';
-            saveRouteNoteBtn.style.background = '#d70a33';
+            alert('Failed to update note.');
           });
       } else {
         database.ref('route-info').push(note)
@@ -857,144 +799,126 @@ Events taking place/due to take place: </textarea>
           })
           .catch(error => {
             console.error('Error saving note:', error);
-            saveRouteNoteBtn.textContent = 'Error';
-            saveRouteNoteBtn.style.background = '#d70a33';
+            alert('Failed to save note.');
           });
       }
     });
 
     function resetForm() {
-      editingNoteId = null;
-      routeDd.value = '';
       routeInfoText.value = '';
-      saveRouteNoteBtn.disabled = true;
+      editingNoteId = null;
       saveRouteNoteBtn.textContent = 'Save Note';
-      saveRouteNoteBtn.style.background = '#ff44d0';
+      saveRouteNoteBtn.disabled = true;
+      renderNotes();
     }
 
-    function loadRouteNotes() {
-      let allNotes = [];
+    function renderNotes() {
+      const selectedRoute = routeDd.value;
+      if (!selectedRoute) {
+        routeNotesList.innerHTML = '<div>Select a route to view notes.</div>';
+        return;
+      }
 
-      database.ref('route-info').on('value', (snapshot) => {
-        const notes = snapshot.val();
-        allNotes = notes ? Object.entries(notes).map(([id, note]) => ({ id, ...note })) : [];
-        renderNotes();
-      });
-
-      function renderNotes() {
-        const selectedRoute = routeDd.value;
+      database.ref('route-info').orderByChild('route').equalTo(selectedRoute).once('value', snapshot => {
         routeNotesList.innerHTML = '';
-
-        const filteredNotes = selectedRoute
-          ? allNotes.filter(note => note.route === selectedRoute)
-          : [];
-
-        if (filteredNotes.length === 0) {
-          routeNotesList.innerHTML = '<p>No route notes available for this route.</p>';
+        const notes = snapshot.val();
+        if (!notes) {
+          routeNotesList.innerHTML = '<div>No notes found for this route.</div>';
           return;
         }
 
-        filteredNotes.sort((a, b) => b.timestamp - a.timestamp);
-        filteredNotes.forEach(note => {
+        const notesArray = Object.entries(notes).map(([id, note]) => ({ id, ...note }));
+        notesArray.sort((a, b) => b.timestamp - a.timestamp);
+
+        notesArray.forEach(note => {
           const noteDiv = document.createElement('div');
           noteDiv.className = 'route-note';
-          const date = new Date(note.timestamp);
+          const date = new Date(note.timestamp).toLocaleString();
           noteDiv.innerHTML = `
-            <p><strong>Route ${note.route}:</strong> ${note.info}</p>
-            <p class="timestamp">Posted: ${date.toLocaleString()}</p>
+            <p>${note.info}</p>
+            <p><small>Added: ${date}</small></p>
             <button class="edit-btn" data-id="${note.id}">Edit</button>
             <button class="delete-btn" data-id="${note.id}">Delete</button>
             <button class="copy-btn" data-id="${note.id}">Copy</button>
-            <button class="push-btn" data-id="${note.id}">Push</button>
+            <button class="push-btn" data-id="${note.id}">Push to Routes</button>
             <div class="push-options" id="push-options-${note.id}">
-              <label for="push-routes-${note.id}">Select Routes to Push:</label>
-              <select id="push-routes-${note.id}" multiple>
-                <option value="33">33</option>
-                <option value="65">65</option>
-                <option value="71">71</option>
-                <option value="85">85</option>
-                <option value="105">105</option>
-                <option value="110">110</option>
-                <option value="116">116</option>
-                <option value="117">117</option>
-                <option value="203">203</option>
-                <option value="216">216</option>
-                <option value="235">235</option>
-                <option value="281">281</option>
-                <option value="290">290</option>
-                <option value="293">293</option>
-                <option value="371">371</option>
-                <option value="406">406</option>
-                <option value="411">411</option>
-                <option value="418">418</option>
-                <option value="419">419</option>
-                <option value="423">423</option>
-                <option value="467">467</option>
-                <option value="H22">H22</option>
-                <option value="H37">H37</option>
-                <option value="H98">H98</option>
-                <option value="K1">K1</option>
-                <option value="K2">K2</option>
-                <option value="K3">K3</option>
-                <option value="K4">K4</option>
-                <option value="K5">K5</option>
-              </select>
-              <div class="actions" style="margin-top: 10px;">
-                <button class="confirm-push" data-id="${note.id}">Confirm Push</button>
-                <button class="cancel-push" data-id="${note.id}">Cancel</button>
+              <div class="routes-checkbox-container">
+                <label><input type="checkbox" value="33"> 33</label>
+                <label><input type="checkbox" value="65"> 65</label>
+                <label><input type="checkbox" value="71"> 71</label>
+                <label><input type="checkbox" value="85"> 85</label>
+                <label><input type="checkbox" value="105"> 105</label>
+                <label><input type="checkbox" value="110"> 110</label>
+                <label><input type="checkbox" value="116"> 116</label>
+                <label><input type="checkbox" value="117"> 117</label>
+                <label><input type="checkbox" value="203"> 203</label>
+                <label><input type="checkbox" value="216"> 216</label>
+                <label><input type="checkbox" value="235"> 235</label>
+                <label><input type="checkbox" value="281"> 281</label>
+                <label><input type="checkbox" value="290"> 290</label>
+                <label><input type="checkbox" value="293"> 293</label>
+                <label><input type="checkbox" value="371"> 371</label>
+                <label><input type="checkbox" value="406"> 406</label>
+                <label><input type="checkbox" value="411"> 411</label>
+                <label><input type="checkbox" value="418"> 418</label>
+                <label><input type="checkbox" value="419"> 419</label>
+                <label><input type="checkbox" value="423"> 423</label>
+                <label><input type="checkbox" value="467"> 467</label>
+                <label><input type="checkbox" value="H22"> H22</label>
+                <label><input type="checkbox" value="H37"> H37</label>
+                <label><input type="checkbox" value="H98"> H98</label>
+                <label><input type="checkbox" value="K1"> K1</label>
+                <label><input type="checkbox" value="K2"> K2</label>
+                <label><input type="checkbox" value="K3"> K3</label>
+                <label><input type="checkbox" value="K4"> K4</label>
+                <label><input type="checkbox" value="K5"> K5</label>
               </div>
+              <button class="confirm-push" data-id="${note.id}">Confirm Push</button>
             </div>
           `;
           routeNotesList.appendChild(noteDiv);
 
           noteDiv.querySelector('.edit-btn').addEventListener('click', () => {
             editingNoteId = note.id;
-            routeDd.value = note.route;
             routeInfoText.value = note.info;
             saveRouteNoteBtn.textContent = 'Update Note';
-            saveRouteNoteBtn.style.background = '#44b261';
-            updateSaveButtonState();
+            saveRouteNoteBtn.disabled = false;
           });
 
           noteDiv.querySelector('.delete-btn').addEventListener('click', () => {
-            database.ref('route-info/' + note.id).remove()
-              .catch(error => {
-                console.error('Error deleting note:', error);
-                alert('Failed to delete note.');
-              });
+            if (confirm('Are you sure you want to delete this note?')) {
+              database.ref('route-info/' + note.id).remove()
+                .then(() => {
+                  renderNotes();
+                })
+                .catch(error => {
+                  console.error('Error deleting note:', error);
+                  alert('Failed to delete note.');
+                });
+            }
           });
 
           noteDiv.querySelector('.copy-btn').addEventListener('click', () => {
-            const textToCopy = `Route ${note.route}: ${note.info}\nPosted: ${date.toLocaleString()}`;
-            navigator.clipboard.writeText(textToCopy).then(() => {
-              const copyBtn = noteDiv.querySelector('.copy-btn');
-              copyBtn.textContent = 'Copied!';
-              copyBtn.style.background = '#44b261';
-              setTimeout(() => {
-                copyBtn.textContent = 'Copy';
-                copyBtn.style.background = '#4a90e2';
-              }, 2000);
-            }).catch(err => {
-              console.error('Failed to copy text: ', err);
-              alert('Failed to copy note.');
-            });
+            const textarea = document.createElement('textarea');
+            textarea.value = note.info;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('Note copied to clipboard!');
           });
 
           noteDiv.querySelector('.push-btn').addEventListener('click', () => {
             const pushOptions = noteDiv.querySelector('.push-options');
-            pushOptions.classList.add('active');
-          });
-
-          noteDiv.querySelector('.cancel-push').addEventListener('click', () => {
-            const pushOptions = noteDiv.querySelector('.push-options');
-            pushOptions.classList.remove('active');
+            pushOptions.classList.toggle('active');
           });
 
           noteDiv.querySelector('.confirm-push').addEventListener('click', () => {
-            const pushRoutesSelect = noteDiv.querySelector(`#push-routes-${note.id}`);
-            const selectedRoutes = Array.from(pushRoutesSelect.selectedOptions).map(option => option.value);
+            const checkboxes = noteDiv.querySelectorAll('.routes-checkbox-container input[type="checkbox"]:checked');
+            const selectedRoutes = Array.from(checkboxes).map(checkbox => checkbox.value);
+            
             if (selectedRoutes.length === 0) {
-              alert('Please select at least one route to push.');
+              alert('Please select at least one route to push to.');
               return;
             }
 
@@ -1022,8 +946,10 @@ Events taking place/due to take place: </textarea>
               });
           });
         });
-      }
+      });
+    }
 
+    function loadRouteNotes() {
       routeDd.addEventListener('change', () => {
         if (!editingNoteId) {
           routeInfoText.value = '';
