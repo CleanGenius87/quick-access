@@ -1,5 +1,4 @@
-with open('index.html', 'w', encoding='utf-8') as f:
-    f.write('''<!DOCTYPE html>
+<!DOCTYPE html>
 <!-- Forcing GitHub Pages redeploy to clear cache: 2025-04-29 22:00 BST -->
 <html lang="en">
 <head>
@@ -19,24 +18,24 @@ with open('index.html', 'w', encoding='utf-8') as f:
   <link rel="stylesheet" href="overtime.css">
   <style>
     body {
-    background: #2c0078;
-    font-family: 'Montserrat', Arial, sans-serif;
-    color: #fff;
-    margin: 0;
-    min-height: 100vh;
+      background: #2c0078;
+      font-family: 'Montserrat', Arial, sans-serif;
+      color: #fff;
+      margin: 0;
+      min-height: 100vh;
     }
     .container {
-    background: #fff; color: #2c0078; max-width: 520px;
-    margin: 64px auto 0 auto; padding: 36px 36px 32px 36px; border-radius: 18px;
-    box-shadow: 0 8px 40px rgba(44,0,120,0.11); display: flex; flex-direction: column; align-items: center;
+      background: #fff; color: #2c0078; max-width: 520px;
+      margin: 64px auto 0 auto; padding: 36px 36px 32px 36px; border-radius: 18px;
+      box-shadow: 0 8px 40px rgba(44,0,120,0.11); display: flex; flex-direction: column; align-items: center;
     }
     .logo { width: 180px; margin-bottom: 35px; display: block; }
     .tabs { display: flex; justify-content: center; width: 100%; margin-bottom: 30px; flex-wrap: wrap; }
     .tab { flex: 1; padding: 13px 0; text-align: center;
-    background: #ede7fd; color: #2c0078; font-weight: 600; font-size: 1.04rem;
-    cursor: pointer; margin: 0 3px 6px 3px; border-radius: 7px 7px 0 0;
-    border-bottom: 3px solid transparent; transition: all 0.12s; outline: none;
-    min-width: 120px;
+      background: #ede7fd; color: #2c0078; font-weight: 600; font-size: 1.04rem;
+      cursor: pointer; margin: 0 3px 6px 3px; border-radius: 7px 7px 0 0;
+      border-bottom: 3px solid transparent; transition: all 0.12s; outline: none;
+      min-width: 120px;
     }
     .tab.active { background: #fff; color: #ff44d0; border-bottom: 3px solid #ff44d0; }
     .tab-content { display: none; width: 100%; }
@@ -44,19 +43,19 @@ with open('index.html', 'w', encoding='utf-8') as f:
     .dropdown-section, .noe-section { width: 100%; margin-bottom: 24px; }
     label { font-weight: bold; margin-bottom: 8px; display: block; font-size: 1.05rem; color: #2c0078;}
     select, input[type="text"], input[type="time"], input[type="file"], input[type="date"], textarea {
-    width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
-    margin-bottom: 6px; background: #faf7ff; color: #2c0078; font-family: 'Montserrat', Arial, sans-serif;
+      width: 100%; padding: 10px 12px; border-radius: 7px; border: 1.5px solid #2c0078; font-size: 1rem;
+      margin-bottom: 6px; background: #faf7ff; color: #2c0078; font-family: 'Montserrat', Arial, sans-serif;
     }
     textarea { height: 100px; resize: vertical; }
     .actions { margin-top: 14px; width: 100%; display: flex; justify-content: flex-end; gap: 10px; }
     button { border: none; border-radius: 6px; padding: 9px 22px; background: #ff44d0; color: #fff;
-    font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.16s; min-width: 120px;
-    box-shadow: 0 2px 10px rgba(44,0,120,0.04);
+      font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.16s; min-width: 120px;
+      box-shadow: 0 2px 10px rgba(44,0,120,0.04);
     }
     button:disabled { background: #c7b2f7; cursor: not-allowed;}
     .noe-list { margin-top: 20px; margin-bottom: 8px; padding-left: 0px; list-style:none;}
     .noe-list li { background: #ede7fd; border-radius: 6px; padding: 9px 14px 7px 14px; margin-bottom: 9px;
-    font-size: 1rem; font-weight: 500; color: #36297d; display: flex; justify-content: space-between; align-items: center;}
+      font-size: 1rem; font-weight: 500; color: #36297d; display: flex; justify-content: space-between; align-items: center;}
     .noe-list a { color: #ff44d0; text-decoration: none; }
     .noe-list button { padding: 5px 10px; min-width: 80px; margin-left: 5px; }
     .noe-buttons { display: flex; justify-content: flex-end; gap: 5px; }
@@ -66,8 +65,8 @@ with open('index.html', 'w', encoding='utf-8') as f:
     .contact-info { font-size: 0.95rem; color: #d70a33; margin-top: 10px; }
     .handover-content { margin-top: 20px; padding: 10px; background: #ede7fd; border-radius: 6px; width: 100%; }
     .handover-content textarea {
-    width: 100%; height: 400px; padding: 10px; border: none; background: transparent;
-    font-size: 0.95rem; color: #36297d; resize: none; font-family: 'Montserrat', Arial, sans-serif;
+      width: 100%; height: 400px; padding: 10px; border: none; background: transparent;
+      font-size: 0.95rem; color: #36297d; resize: none; font-family: 'Montserrat', Arial, sans-serif;
     }
     .route-notes { margin-top: 20px; padding: 10px; background: #ede7fd; border-radius: 6px; }
     .route-notes h3 { margin: 0 0 10px 0; font-size: 1.1rem; color: #2c0078; }
@@ -75,146 +74,146 @@ with open('index.html', 'w', encoding='utf-8') as f:
     .route-note:last-child { border-bottom: none; }
     .route-note p { margin: 4px 0; font-size: 0.95rem; color: #36297d; }
     .route-note .delete-btn, .route-note .edit-btn, .route-note .copy-btn, .route-note .push-btn {
-    border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.9rem; cursor: pointer;
-    position: static; display: inline-block; margin-top: 8px; margin-right: 8px;
+      border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.9rem; cursor: pointer;
+      position: static; display: inline-block; margin-top: 8px; margin-right: 8px;
     }
     .route-note .delete-btn { background: #ff4444; color: #fff; }
     .route-note .edit-btn { background: #44b261; color: #fff; }
     .route-note .copy-btn { background: #4a90e2; color: #fff; }
     .route-note .push-btn { background: #ff44d0; color: #fff; }
     .push-options {
-    display: none; margin-top: 10px; width: 100%;
+      display: none; margin-top: 10px; width: 100%;
     }
     .push-options.active {
-    display: block;
+      display: block;
     }
     .driving-hours-section {
-    margin-top: 20px; padding: 10px; background: #ede7fd; border-radius: 6px; width: 100%;
+      margin-top: 20px; padding: 10px; background: #ede7fd; border-radius: 6px; width: 100%;
     }
     .driving-hours-section h3 { margin: 0 0 10px 0; font-size: 1.1rem; color: #2c0078; }
     .trip-inputs { margin-bottom: 15px; }
     .trip-inputs label { font-size: 0.95rem; }
     .trip-input { margin-bottom: 10px; }
     .routes-checkbox-container {
-    max-height: 100px; overflow-y: auto; padding: 10px; border: 1.5px solid #2c0078;
-    border-radius: 7px; background: #faf7ff; margin-bottom: 6px;
+      max-height: 100px; overflow-y: auto; padding: 10px; border: 1.5px solid #2c0078;
+      border-radius: 7px; background: #faf7ff; margin-bottom: 6px;
     }
     .routes-checkbox-container label {
-    display: flex; align-items: center; font-weight: 500; font-size: 0.95rem; margin-bottom: 6px;
-    color: #36297d;
+      display: flex; align-items: center; font-weight: 500; font-size: 0.95rem; margin-bottom: 6px;
+      color: #36297d;
     }
     .routes-checkbox-container input[type="checkbox"] {
-    margin-right: 8px; width: 16px; height: 16px;
+      margin-right: 8px; width: 16px; height: 16px;
     }
     .date-inputs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
     }
     .date-input {
-    flex: 1;
+      flex: 1;
     }
     .noe-edit-modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
     }
     .noe-edit-modal-content {
-    background-color: #fff;
-    margin: 15% auto;
-    padding: 20px;
-    border-radius: 10px;
-    width: 80%;
-    max-width: 500px;
+      background-color: #fff;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 500px;
     }
     .noe-edit-modal-close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
     }
     .noe-edit-modal-close:hover {
-    color: #000;
+      color: #000;
     }
     .noe-status-header {
-    background: #2c0078;
-    color: white;
-    padding: 8px 14px;
-    margin-top: 15px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    font-weight: 600;
+      background: #2c0078;
+      color: white;
+      padding: 8px 14px;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      font-weight: 600;
     }
     .noe-status-active {
-    border-left: 5px solid #44b261;
+      border-left: 5px solid #44b261;
     }
     .noe-status-upcoming {
-    border-left: 5px solid #4a90e2;
+      border-left: 5px solid #4a90e2;
     }
     .noe-status-finished {
-    border-left: 5px solid #c7b2f7;
+      border-left: 5px solid #c7b2f7;
     }
     .noe-status-overrunning {
-    border-left: 5px solid #ff4444;
+      border-left: 5px solid #ff4444;
     }
     .noe-status-indicator {
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    margin-left: 5px;
-    color: white;
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin-left: 5px;
+      color: white;
     }
     .status-active {
-    background-color: #44b261;
+      background-color: #44b261;
     }
     .status-upcoming {
-    background-color: #4a90e2;
+      background-color: #4a90e2;
     }
     .status-finished {
-    background-color: #c7b2f7;
+      background-color: #c7b2f7;
     }
     .status-overrunning {
-    background-color: #ff4444;
+      background-color: #ff4444;
     }
     .route-noes {
-    margin-top: 15px;
-    padding: 10px;
-    background: #f5f0ff;
-    border-radius: 6px;
-    border-left: 5px solid #ff44d0;
+      margin-top: 15px;
+      padding: 10px;
+      background: #f5f0ff;
+      border-radius: 6px;
+      border-left: 5px solid #ff44d0;
     }
     .route-noes h4 {
-    margin: 0 0 10px 0;
-    font-size: 1rem;
-    color: #2c0078;
+      margin: 0 0 10px 0;
+      font-size: 1rem;
+      color: #2c0078;
     }
     @media (max-width: 600px) {
-    .container {padding: 12px 2vw; max-width: 100vw;}
-    .logo {width: 48vw; max-width: 225px;}
-    .tab { font-size: 0.95rem; padding: 10px 0; min-width: 100px; }
-    .handover-content textarea { height: 300px; font-size: 0.9rem; }
-    textarea { height: 80px; }
-    .route-note p { font-size: 0.9rem; }
-    .route-note .delete-btn, .route-note .edit-btn, .route-note .copy-btn, .route-note .push-btn { padding: 3px 6px; font-size: 0.85rem; }
-    .noe-list li { align-items: center; }
-    .noe-list button { min-width: 60px; }
-    .routes-checkbox-container { max-height: 80px; }
-    .routes-checkbox-container label { font-size: 0.9rem; }
-    .date-inputs {
-    flex-direction: column;
-    gap: 5px;
-    }
-    .noe-edit-modal-content {
-    width: 90%;
-    margin: 30% auto;
-    }
+      .container {padding: 12px 2vw; max-width: 100vw;}
+      .logo {width: 48vw; max-width: 225px;}
+      .tab { font-size: 0.95rem; padding: 10px 0; min-width: 100px; }
+      .handover-content textarea { height: 300px; font-size: 0.9rem; }
+      textarea { height: 80px; }
+      .route-note p { font-size: 0.9rem; }
+      .route-note .delete-btn, .route-note .edit-btn, .route-note .copy-btn, .route-note .push-btn { padding: 3px 6px; font-size: 0.85rem; }
+      .noe-list li { align-items: center; }
+      .noe-list button { min-width: 60px; }
+      .routes-checkbox-container { max-height: 80px; }
+      .routes-checkbox-container label { font-size: 0.9rem; }
+      .date-inputs {
+        flex-direction: column;
+        gap: 5px;
+      }
+      .noe-edit-modal-content {
+        width: 90%;
+        margin: 30% auto;
+      }
     }
   </style>
 </head>
@@ -222,173 +221,1535 @@ with open('index.html', 'w', encoding='utf-8') as f:
   <div class="container">
     <img src="https://www.firstbus.co.uk/themes/custom/first_bus/logo.svg" class="logo" alt="First Bus Logo">
     <div class="tabs">
-    <div class="tab active" data-tab="access">Quick Access</div>
-    <div class="tab" data-tab="noes">NOE's</div>
-    <div class="tab" data-tab="toilet">Toilet Codes</div>
-    <div class="tab" data-tab="handover">Midnight Handover</div>
-    <div class="tab" data-tab="route-info">Route Info</div>
-    <div class="tab" data-tab="driving-hours">Driving Hours</div>
+      <div class="tab active" data-tab="access">Quick Access</div>
+      <div class="tab" data-tab="noes">NOE's</div>
+      <div class="tab" data-tab="toilet">Toilet Codes</div>
+      <div class="tab" data-tab="handover">Midnight Handover</div>
+      <div class="tab" data-tab="route-info">Route Info</div>
+      <div class="tab" data-tab="driving-hours">Driving Hours</div>
     <div class="tab" data-tab="overtime">Overtime Form</div>
     </div>
 
+
     <!-- Tab 1: Quick Access -->
-    <!-- ...[rest of your HTML remains unchanged]... -->
+    <div class="tab-content active" id="tab-access">
+      <div class="dropdown-section">
+        <label for="websiteDropdown">Websites</label>
+        <select id="websiteDropdown">
+          <option value="">Select a website…</option>
+          <option value="https://cv-fleetlink-eu.byd.com/login?redirect=/">BYD FleetLink</option>
+          <option value="https://plan.tomtom.com/">TomTom Plan</option>
+          <option value="https://one.network/">one.network</option>
+          <option value="https://networkmanagementcc.blogspot.com/">Network Management CC Blogspot</option>
+          <option value="https://central.greenroad.com/Pages/Login.aspx">GreenRoad Central Login</option>
+          <option value="https://bc.tranzaura.com/Login">Tranzaura Login</option>
+          <option value="https://selfservice.ratpdev.uk/llubdasweb/web/html/wbsyslogin.r?co=0&lg=0">RATPdev Self Service</option>
+          <option value="https://vulcan.ratpdev.com/_dashboards/app/">RATPdev Vulcan Dashboards</option>
+        </select>
+        <div class="actions">
+          <button id="openWebsite" disabled>Open Website</button>
+        </div>
+      </div>
+      <div class="dropdown-section">
+        <label for="fileDropdown">Files</label>
+        <select id="fileDropdown">
+          <option value="">Select a file…</option>
+          <option value="files/20050325%20-%20V16%20SIRF%20Template.xlsx">20050325 - V16 SIRF Template (Excel)</option>
+          <option value="files/Annual%20Leave%20Request%20Form.docx">Annual Leave Request Form (Word)</option>
+          <option value="files/BLANK%20TIMESHEET%20LATEST%20VERSION.xlsm">Blank Timesheet Latest Version (Excel)</option>
+          <option value="files/BR43-Blank-form.doc">BR43 - Blank Form (Word)</option>
+          <option value="files/Bus%20Running%20Record.pdf">Bus Running Record (PDF)</option>
+          <option value="files/Fulwell%20battery%20sheet.xlsx">Fulwell Battery Sheet (Excel)</option>
+          <option value="files/IBUS%20Report%20Form%20-%20NEW.xls">IBUS Report Form - NEW (Excel)</option>
+          <option value="files/Official-report-blank.xlsm">Official Report Blank (Excel)</option>
+        </select>
+        <div class="actions">
+          <button id="openFile" disabled>Download File</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: NOE's -->
+    <div class="tab-content" id="tab-noes">
+      <div class="noe-section">
+        <label for="noeFileInput">Upload NOE PDF</label>
+        <input type="file" id="noeFileInput" accept="application/pdf">
+        <div class="date-inputs">
+          <div class="date-input">
+            <label for="noeStartDate">Start Date</label>
+            <input type="date" id="noeStartDate">
+          </div>
+          <div class="date-input">
+            <label for="noeEndDate">End Date</label>
+            <input type="date" id="noeEndDate">
+          </div>
+        </div>
+        <label>Select Affected Routes</label>
+        <div class="routes-checkbox-container" id="noeRoutesCheckboxes">
+          <label><input type="checkbox" value="33"> 33</label>
+          <label><input type="checkbox" value="65"> 65</label>
+          <label><input type="checkbox" value="71"> 71</label>
+          <label><input type="checkbox" value="85"> 85</label>
+          <label><input type="checkbox" value="105"> 105</label>
+          <label><input type="checkbox" value="110"> 110</label>
+          <label><input type="checkbox" value="116"> 116</label>
+          <label><input type="checkbox" value="117"> 117</label>
+          <label><input type="checkbox" value="203"> 203</label>
+          <label><input type="checkbox" value="216"> 216</label>
+          <label><input type="checkbox" value="235"> 235</label>
+          <label><input type="checkbox" value="281"> 281</label>
+          <label><input type="checkbox" value="290"> 290</label>
+          <label><input type="checkbox" value="293"> 293</label>
+          <label><input type="checkbox" value="371"> 371</label>
+          <label><input type="checkbox" value="406"> 406</label>
+          <label><input type="checkbox" value="411"> 411</label>
+          <label><input type="checkbox" value="418"> 418</label>
+          <label><input type="checkbox" value="419"> 419</label>
+          <label><input type="checkbox" value="423"> 423</label>
+          <label><input type="checkbox" value="467"> 467</label>
+          <label><input type="checkbox" value="613"> 613</label>
+          <label><input type="checkbox" value="662"> 662</label>
+          <label><input type="checkbox" value="665"> 665</label>
+          <label><input type="checkbox" value="681"> 681</label>
+          <label><input type="checkbox" value="696"> 696</label>
+          <label><input type="checkbox" value="698"> 698</label>
+          <label><input type="checkbox" value="H22"> H22</label>
+          <label><input type="checkbox" value="H37"> H37</label>
+          <label><input type="checkbox" value="H98"> H98</label>
+          <label><input type="checkbox" value="K1"> K1</label>
+          <label><input type="checkbox" value="K2"> K2</label>
+          <label><input type="checkbox" value="K3"> K3</label>
+          <label><input type="checkbox" value="K4"> K4</label>
+          <label><input type="checkbox" value="K5"> K5</label>
+        </div>
+        <div class="actions">
+          <button id="uploadNoe" disabled>Upload PDF</button>
+        </div>
+      </div>
+      <div class="dropdown-section">
+        <label for="noeFilterDropdown">Filter by Route</label>
+        <select id="noeFilterDropdown">
+          <option value="">All Routes</option>
+          <option value="33">33</option>
+          <option value="65">65</option>
+          <option value="71">71</option>
+          <option value="85">85</option>
+          <option value="105">105</option>
+          <option value="110">110</option>
+          <option value="116">116</option>
+          <option value="117">117</option>
+          <option value="203">203</option>
+          <option value="216">216</option>
+          <option value="235">235</option>
+          <option value="281">281</option>
+          <option value="290">290</option>
+          <option value="293">293</option>
+          <option value="371">371</option>
+          <option value="406">406</option>
+          <option value="411">411</option>
+          <option value="418">418</option>
+          <option value="419">419</option>
+          <option value="423">423</option>
+          <option value="467">467</option>
+          <option value="613">613</option>
+          <option value="662">662</option>
+          <option value="665">665</option>
+          <option value="681">681</option>
+          <option value="696">696</option>
+          <option value="698">698</option>
+          <option value="H22">H22</option>
+          <option value="H37">H37</option>
+          <option value="H98">H98</option>
+          <option value="K1">K1</option>
+          <option value="K2">K2</option>
+          <option value="K3">K3</option>
+          <option value="K4">K4</option>
+          <option value="K5">K5</option>
+        </select>
+      </div>
+      <div id="noeListArea">
+        <ul class="noe-list" id="noeList"></ul>
+      </div>
+    </div>
+
+    <!-- NOE Edit Modal -->
+    <div id="noeEditModal" class="noe-edit-modal">
+      <div class="noe-edit-modal-content">
+        <span class="noe-edit-modal-close">&times;</span>
+        <h3>Edit NOE Dates</h3>
+        <div class="date-inputs">
+          <div class="date-input">
+            <label for="editNoeStartDate">Start Date</label>
+            <input type="date" id="editNoeStartDate">
+          </div>
+          <div class="date-input">
+            <label for="editNoeEndDate">End Date</label>
+            <input type="date" id="editNoeEndDate">
+          </div>
+        </div>
+        <div class="actions">
+          <button id="saveNoeEdit">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Toilet Codes -->
+    <div class="tab-content" id="tab-toilet">
+      <div class="dropdown-section">
+        <label for="toiletLocationDropdown">Select Location</label>
+        <select id="toiletLocationDropdown">
+          <option value="">Select a location…</option>
+          <option value="Acton Green">Acton Green</option>
+          <option value="Atkins Road">Atkins Road</option>
+          <option value="Belmont">Belmont</option>
+          <option value="Bessborough Rd./Alton Rd.">Bessborough Rd./Alton Rd.</option>
+          <option value="Brentford County Court">Brentford County Court</option>
+          <option value="Brook Street">Brook Street</option>
+          <option value="Cane Hill">Cane Hill</option>
+          <option value="Camberwell">Camberwell</option>
+          <option value="Chessington WOA">Chessington WOA</option>
+          <option value="Chiswick Business Park">Chiswick Business Park</option>
+          <option value="Clapham Junction">Clapham Junction</option>
+          <option value="Cromwell Road">Cromwell Road</option>
+          <option value="East Acton, Telford Way">East Acton, Telford Way</option>
+          <option value="Ealing Taxi/Bus Stand">Ealing Taxi/Bus Stand</option>
+          <option value="Fairfield Bus Station">Fairfield Bus Station</option>
+          <option value="Fulwell Stanley Road">Fulwell Stanley Road</option>
+          <option value="Great West Quarter">Great West Quarter</option>
+          <option value="Ham">Ham</option>
+          <option value="Hammersmith Lower">Hammersmith Lower</option>
+          <option value="Harrow Bus Station">Harrow Bus Station</option>
+          <option value="Kingston - Millennium House">Kingston - Millennium House</option>
+          <option value="Lonsdale Road">Lonsdale Road</option>
+          <option value="Manor Road">Manor Road</option>
+          <option value="Mitcham Fair Green">Mitcham Fair Green</option>
+          <option value="Morden">Morden</option>
+          <option value="Park Royal ASDA">Park Royal ASDA</option>
+          <option value="Pollards Hill">Pollards Hill</option>
+          <option value="Putney Bridge">Putney Bridge</option>
+          <option value="Richmond Bus Station">Richmond Bus Station</option>
+          <option value="Roehampton Bus Station">Roehampton Bus Station</option>
+          <option value="Southgate Toilet">Southgate Toilet</option>
+          <option value="Staines Elmsleigh Centre">Staines Elmsleigh Centre</option>
+          <option value="Sutton Hospital">Sutton Hospital</option>
+          <option value="Tolworth (Toby Way)">Tolworth (Toby Way)</option>
+          <option value="Tolworth Travel Lodge">Tolworth Travel Lodge</option>
+          <option value="Tottenham Hale Bus Station Cabin">Tottenham Hale Bus Station Cabin</option>
+          <option value="Turnpike Lane">Turnpike Lane</option>
+          <option value="Twickenham Albany">Twickenham Albany</option>
+          <option value="Wakefield Road">Wakefield Road</option>
+          <option value="Waitrose Twickenham">Waitrose Twickenham</option>
+          <option value="Wallington">Wallington</option>
+        </select>
+        <div class="actions">
+          <button id="showToiletCodes" disabled>Show Codes</button>
+        </div>
+      </div>
+      <div class="toilet-codes" id="toiletCodesDisplay" style="display: none;"></div>
+      <div class="contact-info">
+        <p>If you find any incorrect codes, please contact the Network Management Team.</p>
+      </div>
+    </div>
+
+    <!-- Tab 4: Midnight Handover -->
+    <div class="tab-content" id="tab-handover">
+      <div class="dropdown-section">
+        <label for="handoverText">Midnight Handover Template</label>
+        <div class="handover-content">
+          <textarea id="handoverText" readonly>Fulwell Midnight Handover
+K4,71,110,116,117,203,216,235,290,293,371,406,411,418,423,H22,H37,H98
+
+Route :  K4
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  71
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  110
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  116
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  117
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  203
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  216
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  235
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  290
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  293
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route : 371 
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  406
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  411
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  418
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  423
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  H22
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  H37
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: 
+
+Route :  H98
+Max delays : minutes 
+Latest Bus (over stand time):     
+Non polling buses : N/A
+Missing buses (due to mechanical, incident, staff cut etc):N/A
+Late Meal Relief :N/A
+Events taking place/due to take place: </textarea>
+        </div>
+        <div class="actions">
+          <button id="copyHandoverText">Copy to Clipboard</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 5: Route Info -->
+    <div class="tab-content" id="tab-route-info">
+      <div class="dropdown-section">
+        <label for="routeDropdown">Select Route</label>
+        <select id="routeDropdown">
+          <option value="">Select a route…</option>
+          <option value="33">33</option>
+          <option value="65">65</option>
+          <option value="71">71</option>
+          <option value="85">85</option>
+          <option value="105">105</option>
+          <option value="110">110</option>
+          <option value="116">116</option>
+          <option value="117">117</option>
+          <option value="203">203</option>
+          <option value="216">216</option>
+          <option value="235">235</option>
+          <option value="281">281</option>
+          <option value="290">290</option>
+          <option value="293">293</option>
+          <option value="371">371</option>
+          <option value="406">406</option>
+          <option value="411">411</option>
+          <option value="418">418</option>
+          <option value="419">419</option>
+          <option value="423">423</option>
+          <option value="467">467</option>
+          <option value="613">613</option>
+          <option value="662">662</option>
+          <option value="665">665</option>
+          <option value="681">681</option>
+          <option value="696">696</option>
+          <option value="698">698</option>
+          <option value="H22">H22</option>
+          <option value="H37">H37</option>
+          <option value="H98">H98</option>
+          <option value="K1">K1</option>
+          <option value="K2">K2</option>
+          <option value="K3">K3</option>
+          <option value="K4">K4</option>
+          <option value="K5">K5</option>
+        </select>
+        <label for="routeInfo">Route Information</label>
+        <textarea id="routeInfo" placeholder="Enter route information, notes, or tips here..."></textarea>
+        <div class="actions">
+          <button id="saveRouteNote" disabled>Save Note</button>
+        </div>
+      </div>
+      <div id="routeNotesDisplay" class="route-notes">
+        <h3>Saved Route Notes</h3>
+        <div id="routeNotesList"></div>
+      </div>
+      <div id="routeNoesDisplay" class="route-noes" style="display: none;">
+        <h4>NOEs for this Route</h4>
+        <div id="routeNoesList"></div>
+      </div>
+    </div>
+
+    <!-- Tab 6: Driving Hours -->
+    <div class="tab-content" id="tab-driving-hours">
+      <div class="driving-hours-section">
+        <h3>Driving Hours Calculator</h3>
+        <div class="trip-inputs">
+          <h4 id="current-spell">First Spell</h4>
+          <div id="current-input"></div>
+        </div>
+        <div class="actions">
+          <button id="break-spell" style="display: none;">Break</button>
+          <button id="calculate-driving-time" style="display: none;">Calculate</button>
+        </div>
+        <div id="driving-time-result" style="margin-top: 10px; font-size: 1.1rem; color: #2c0078;"></div>
+      </div>
+    </div>
+
     <!-- Tab 7: Overtime Form -->
     <div class="tab-content" id="tab-overtime">
-    <form id="overtime-form">
-    <div class="dropdown-section">
-    <label for="dutyNumber">Duty Number</label>
-    <input type="text" id="dutyNumber" name="dutyNumber" required>
-    </div>
-    
-    <div class="dropdown-section">
-    <label for="employeeNumber">Employee Number</label>
-    <input type="text" id="employeeNumber" name="employeeNumber" required>
-    </div>
-    
-    <div class="dropdown-section">
-    <label for="totalTimeDriven">Total Time Driven (before OT)</label>
-    <input type="text" id="totalTimeDriven" name="totalTimeDriven" placeholder="e.g., 8h 30m" required>
-    </div>
-    
-    <div class="dropdown-section">
-    <label for="routes">OG Route / OT Route</label>
-    <input type="text" id="routes" name="routes" placeholder="e.g., 71 / 110" required>
-    </div>
-    
-    <div class="dropdown-section">
-    <label for="otStartTime">OT Start Time</label>
-    <input type="time" id="otStartTime" name="otStartTime" required>
-    </div>
-    
-    <div class="dropdown-section">
-    <label for="otEndTime">OT End Time</label>
-    <input type="time" id="otEndTime" name="otEndTime" required>
-    </div>
-    
-    <div class="dropdown-section">
-    <label for="approvedBy">Approved By</label>
-    <input type="text" id="approvedBy" name="approvedBy" required>
-    </div>
-    
-    <div class="dropdown-section">
-    <label for="overtimeDate">Date</label>
-    <input type="date" id="overtimeDate" name="overtimeDate" required>
-    </div>
-    
-    <div class="dropdown-section">
-    <label for="additionalNotes">Additional Notes</label>
-    <textarea id="additionalNotes" name="additionalNotes" placeholder="Any additional information..."></textarea>
-    </div>
-    
-    <div class="actions">
-    <button type="button" id="generate-pdf">Generate PDF</button>
-    <button type="button" id="send-email">Send Email</button>
-    </div>
-    </form>
+      <form id="overtime-form">
+        <div class="dropdown-section">
+          <label for="dutyNumber">Duty Number</label>
+          <input type="text" id="dutyNumber" name="dutyNumber" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="employeeNumber">Employee Number</label>
+          <input type="text" id="employeeNumber" name="employeeNumber" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="totalTimeDriven">Total Time Driven (before OT)</label>
+          <input type="text" id="totalTimeDriven" name="totalTimeDriven" placeholder="e.g., 8h 30m" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="routes">OG Route / OT Route</label>
+          <input type="text" id="routes" name="routes" placeholder="e.g., 71 / 110" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="otStartTime">OT Start Time</label>
+          <input type="time" id="otStartTime" name="otStartTime" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="otEndTime">OT End Time</label>
+          <input type="time" id="otEndTime" name="otEndTime" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="approvedBy">Approved By</label>
+          <input type="text" id="approvedBy" name="approvedBy" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="overtimeDate">Date</label>
+          <input type="date" id="overtimeDate" name="overtimeDate" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="additionalNotes">Additional Notes</label>
+          <textarea id="additionalNotes" name="additionalNotes" placeholder="Any additional information..."></textarea>
+        </div>
+        
+        <div class="actions">
+          <button type="button" id="generate-pdf">Generate PDF</button>
+          <button type="button" id="send-email">Send Email</button>
+        </div>
+      </form>
     </div>
 
     <div class="footer">
-    © First Bus – Quick Access Portal
+      © First Bus – Quick Access Portal
     </div>
   </div>
 
   <script>
-    // ...[all your existing scripts above remain unchanged]...
+    // ---------------- Firebase Initialization ----------------
+    const firebaseConfig = {
+      apiKey: "AIzaSyDdFpRnDajt4QGWXkkliyS5fbxwmF_uGTI",
+      authDomain: "quick-access-4ecd5.firebaseapp.com",
+      databaseURL: "https://quick-access-4ecd5-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "quick-access-4ecd5",
+      storageBucket: "quick-access-4ecd5.firebasestorage.app",
+      messagingSenderId: "666068072894",
+      appId: "1:666068072894:web:5b25db2dcd137bdb5c61ef"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const storage = firebase.storage();
+
+    // ---------------- Tab UI Logic ----------------
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+        
+        // When switching to Driving Hours tab, reset the calculator
+        if (tab.dataset.tab === 'driving-hours') {
+          resetDrivingHoursCalculator();
+        }
+        // When switching to NOE's tab, load the PDFs
+        if (tab.dataset.tab === 'noes') {
+          loadNoePdfs();
+        }
+        // When switching to Route Info tab, load route notes and NOEs
+        if (tab.dataset.tab === 'route-info') {
+          loadRouteNotes();
+          loadRouteNoes();
+        }
+      });
+    });
+
+    // ------------ Quick Access Logic -------------
+    const siteDd = document.getElementById('websiteDropdown');
+    const openWebsiteBtn = document.getElementById('openWebsite');
+    siteDd.addEventListener('change', () => {
+      openWebsiteBtn.disabled = !siteDd.value;
+    });
+    openWebsiteBtn.addEventListener('click', () => {
+      if (siteDd.value) {
+        const link = document.createElement('a');
+        link.href = siteDd.value;
+        link.target = '_blank';
+        link.click();
+      }
+    });    const fileDd = document.getElementById('fileDropdown');
+    const openFileBtn = document.getElementById('openFile');
+    fileDd.addEventListener('change', () => {
+      openFileBtn.disabled = !fileDd.value;
+    });
+    openFileBtn.addEventListener('click', () => {
+      if (fileDd.value) {
+        // Extract filename from the URL for download attribute
+        const url = fileDd.value;
+        const filename = url.split('/').pop().replace(/%20/g, ' ');
+        
+        // Create a temporary link element for download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.target = '_blank';
+        link.style.display = 'none';
+        
+        // Add to DOM, click, and remove
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    });
+
+    // ------------ NOE's PDF Upload Logic -----------
+    const noeFileInput = document.getElementById('noeFileInput');
+    const noeStartDate = document.getElementById('noeStartDate');
+    const noeEndDate = document.getElementById('noeEndDate');
+    const noeRoutesContainer = document.getElementById('noeRoutesCheckboxes');
+    const uploadNoeBtn = document.getElementById('uploadNoe');
+    const noeFilterDd = document.getElementById('noeFilterDropdown');
+    const noeList = document.getElementById('noeList');
+    const noeEditModal = document.getElementById('noeEditModal');
+    const editNoeStartDate = document.getElementById('editNoeStartDate');
+    const editNoeEndDate = document.getElementById('editNoeEndDate');
+    const saveNoeEditBtn = document.getElementById('saveNoeEdit');
+    const noeEditModalClose = document.querySelector('.noe-edit-modal-close');
+    let currentEditingNoeId = null;
+
+    function updateUploadButtonState() {
+      const hasFile = noeFileInput.files.length > 0;
+      const hasRoutes = Array.from(noeRoutesContainer.querySelectorAll('input[type="checkbox"]:checked')).length > 0;
+      const hasStartDate = noeStartDate.value.trim() !== '';
+      const hasEndDate = noeEndDate.value.trim() !== '';
+      uploadNoeBtn.disabled = !(hasFile && hasRoutes && hasStartDate && hasEndDate);
+    }
+
+    noeFileInput.addEventListener('change', updateUploadButtonState);
+    noeRoutesContainer.addEventListener('change', updateUploadButtonState);
+    noeStartDate.addEventListener('change', updateUploadButtonState);
+    noeEndDate.addEventListener('change', updateUploadButtonState);
+
+    // NOE Edit Modal Logic
+    noeEditModalClose.addEventListener('click', () => {
+      noeEditModal.style.display = 'none';
+      currentEditingNoeId = null;
+    });
+
+    window.addEventListener('click', (event) => {
+      if (event.target === noeEditModal) {
+        noeEditModal.style.display = 'none';
+        currentEditingNoeId = null;
+      }
+    });
+
+    saveNoeEditBtn.addEventListener('click', () => {
+      const startDate = editNoeStartDate.value;
+      const endDate = editNoeEndDate.value;
+      
+      if (!startDate || !endDate) {
+        alert('Please select both start and end dates.');
+        return;
+      }
+      
+      if (currentEditingNoeId) {
+        database.ref('noes/' + currentEditingNoeId).update({
+          startDate: startDate,
+          endDate: endDate
+        }).then(() => {
+          noeEditModal.style.display = 'none';
+          currentEditingNoeId = null;
+          loadNoePdfs();
+          // Also update NOEs in route info if that tab is active
+          if (document.querySelector('.tab[data-tab="route-info"]').classList.contains('active')) {
+            loadRouteNoes();
+          }
+        }).catch(error => {
+          console.error('Error updating NOE dates:', error);
+          alert('Failed to update NOE dates.');
+        });
+      }
+    });
+
+    function openEditModal(noeId, currentStartDate, currentEndDate) {
+      currentEditingNoeId = noeId;
+      editNoeStartDate.value = currentStartDate || '';
+      editNoeEndDate.value = currentEndDate || '';
+      noeEditModal.style.display = 'block';
+    }
+
+    uploadNoeBtn.addEventListener('click', () => {
+      const file = noeFileInput.files[0];
+      const selectedRoutes = Array.from(noeRoutesContainer.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value);
+      const startDate = noeStartDate.value;
+      const endDate = noeEndDate.value;
+      
+      if (!file || selectedRoutes.length === 0 || !startDate || !endDate) return;
+
+      if (file.type !== 'application/pdf') {
+        alert('Please upload a PDF file.');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size exceeds 5MB limit.');
+        return;
+      }
+
+      const timestamp = Date.now();
+      const fileName = `noe_${timestamp}_${file.name}`;
+      const storageRef = storage.ref(`noes/${fileName}`);
+
+      uploadNoeBtn.disabled = true;
+      uploadNoeBtn.textContent = 'Uploading...';
+
+      storageRef.put(file).then((snapshot) => {
+        console.log("Upload snapshot:", snapshot);
+        return snapshot.ref.getDownloadURL();
+      }).then((downloadURL) => {
+        console.log("Download URL:", downloadURL);
+        const noeData = {
+          fileName: file.name,
+          downloadURL: downloadURL,
+          timestamp: timestamp,
+          routes: selectedRoutes,
+          startDate: startDate,
+          endDate: endDate
+        };
+        return database.ref('noes').push(noeData);
+      }).then(() => {
+        uploadNoeBtn.textContent = 'Uploaded!';
+        uploadNoeBtn.style.background = '#44b261';
+        noeFileInput.value = '';
+        noeStartDate.value = '';
+        noeEndDate.value = '';
+        noeRoutesContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => checkbox.checked = false);
+        uploadNoeBtn.disabled = true;
+        setTimeout(() => {
+          uploadNoeBtn.textContent = 'Upload PDF';
+          uploadNoeBtn.style.background = '#ff44d0';
+        }, 2000);
+        loadNoePdfs();
+        // Also update NOEs in route info if that tab is active
+        if (document.querySelector('.tab[data-tab="route-info"]').classList.contains('active')) {
+          loadRouteNoes();
+        }
+      }).catch((error) => {
+        console.error('Error uploading PDF:', error.message, error.code);
+        uploadNoeBtn.textContent = 'Error';
+        uploadNoeBtn.style.background = '#d70a33';
+        alert(`Upload failed: ${error.message}. Check console for details.`);
+        setTimeout(() => {
+          uploadNoeBtn.textContent = 'Upload PDF';
+          uploadNoeBtn.style.background = '#ff44d0';
+          uploadNoeBtn.disabled = false;
+        }, 2000);
+      });
+    });
+
+    function getNoeStatus(startDate, endDate) {
+      if (!startDate || !endDate) return { status: 'unknown', label: 'Unknown' };
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      if (today < start) {
+        return { status: 'upcoming', label: 'Upcoming' };
+      } else if (today > end) {
+        return { status: 'finished', label: 'Finished' };
+      } else if (today >= start && today <= end) {
+        return { status: 'active', label: 'Active' };
+      } else if (today > end) {
+        return { status: 'overrunning', label: 'Overrunning' };
+      }
+      
+      return { status: 'unknown', label: 'Unknown' };
+    }
+
+    function loadNoePdfs() {
+      database.ref('noes').on('value', (snapshot) => {
+        noeList.innerHTML = '';
+        const noes = snapshot.val();
+        if (!noes) {
+          noeList.innerHTML = '<li>No NOE PDFs uploaded yet.</li>';
+          return;
+        }
+
+        const selectedRoute = noeFilterDd.value;
+        const noeArray = Object.entries(noes).map(([id, noe]) => ({ id, ...noe }));
+        const filteredNoes = selectedRoute
+          ? noeArray.filter(noe => noe.routes && noe.routes.includes(selectedRoute))
+          : noeArray;
+
+        // Group NOEs by status
+        const groupedNoes = {
+          active: [],
+          upcoming: [],
+          overrunning: [],
+          finished: []
+        };
+
+        filteredNoes.forEach(noe => {
+          const { status } = getNoeStatus(noe.startDate, noe.endDate);
+          if (groupedNoes[status]) {
+            groupedNoes[status].push(noe);
+          } else {
+            // If status is unknown, put in finished
+            groupedNoes.finished.push(noe);
+          }
+        });
+
+        // Sort each group by date
+        Object.keys(groupedNoes).forEach(status => {
+          groupedNoes[status].sort((a, b) => {
+            if (status === 'upcoming') {
+              // Sort upcoming by start date (ascending)
+              return new Date(a.startDate) - new Date(b.startDate);
+            } else if (status === 'finished' || status === 'overrunning') {
+              // Sort finished and overrunning by end date (descending)
+              return new Date(b.endDate) - new Date(a.endDate);
+            } else {
+              // Sort active by end date (ascending)
+              return new Date(a.endDate) - new Date(b.endDate);
+            }
+          });
+        });
+
+        if (filteredNoes.length === 0) {
+          noeList.innerHTML = '<li>No NOE PDFs found for this route.</li>';
+          return;
+        }
+
+        // Display NOEs by status groups
+        const statusOrder = ['active', 'upcoming', 'overrunning', 'finished'];
+        const statusLabels = {
+          active: 'Active',
+          upcoming: 'Upcoming',
+          overrunning: 'Overrunning',
+          finished: 'Finished'
+        };
+
+        statusOrder.forEach(status => {
+          const noesInStatus = groupedNoes[status];
+          if (noesInStatus.length > 0) {
+            // Add status header
+            const statusHeader = document.createElement('div');
+            statusHeader.className = `noe-status-header noe-status-${status}`;
+            statusHeader.textContent = statusLabels[status];
+            noeList.appendChild(statusHeader);
+
+            // Add NOEs in this status
+            noesInStatus.forEach(noe => {
+              const li = document.createElement('li');
+              const routesText = noe.routes ? noe.routes.join(', ') : 'No routes specified';
+              
+              // Format dates for display
+              const startDateText = noe.startDate ? new Date(noe.startDate).toLocaleDateString() : 'Not specified';
+              const endDateText = noe.endDate ? new Date(noe.endDate).toLocaleDateString() : 'Not specified';
+              
+              const { status, label } = getNoeStatus(noe.startDate, noe.endDate);
+              
+              li.innerHTML = `
+                <div>
+                  <a href="${noe.downloadURL}" target="_blank">${noe.fileName}</a>
+                  <span class="noe-status-indicator status-${status}">${label}</span>
+                  <div><small>Routes: ${routesText}</small></div>
+                  <div><small>Valid: ${startDateText} to ${endDateText}</small></div>
+                </div>
+                <div class="noe-buttons">
+                  <button class="edit-noe" data-id="${noe.id}" data-start="${noe.startDate || ''}" data-end="${noe.endDate || ''}" style="background:#44b261;">Edit</button>
+                  <button class="delete-noe" data-id="${noe.id}" style="background:#ff4444;">Delete</button>
+                </div>
+              `;
+              noeList.appendChild(li);
+
+              li.querySelector('.edit-noe').addEventListener('click', (e) => {
+                const noeId = e.target.dataset.id;
+                const startDate = e.target.dataset.start;
+                const endDate = e.target.dataset.end;
+                openEditModal(noeId, startDate, endDate);
+              });
+
+              li.querySelector('.delete-noe').addEventListener('click', (e) => {
+                const noeId = e.target.dataset.id;
+                database.ref('noes/' + noeId).remove().then(() => {
+                  storage.refFromURL(noe.downloadURL).delete().catch(error => {
+                    console.error('Error deleting file from storage:', error);
+                  });
+                  // Also update NOEs in route info if that tab is active
+                  if (document.querySelector('.tab[data-tab="route-info"]').classList.contains('active')) {
+                    loadRouteNoes();
+                  }
+                }).catch(error => {
+                  console.error('Error deleting NOE:', error);
+                  alert('Failed to delete NOE.');
+                });
+              });
+            });
+          }
+        });
+      });
+    }
+
+    noeFilterDd.addEventListener('change', loadNoePdfs);
+
+    // Function to load NOEs for the selected route in Route Info tab
+    function loadRouteNoes() {
+      const routeNoesDisplay = document.getElementById('routeNoesDisplay');
+      const routeNoesList = document.getElementById('routeNoesList');
+      const selectedRoute = document.getElementById('routeDropdown').value;
+      
+      if (!selectedRoute) {
+        routeNoesDisplay.style.display = 'none';
+        return;
+      }
+
+      database.ref('noes').once('value', (snapshot) => {
+        routeNoesList.innerHTML = '';
+        const noes = snapshot.val();
+        
+        if (!noes) {
+          routeNoesDisplay.style.display = 'none';
+          return;
+        }
+
+        const noeArray = Object.entries(noes).map(([id, noe]) => ({ id, ...noe }));
+        const filteredNoes = noeArray.filter(noe => noe.routes && noe.routes.includes(selectedRoute));
+
+        if (filteredNoes.length === 0) {
+          routeNoesDisplay.style.display = 'none';
+          return;
+        }
+
+        // Group and sort NOEs by status
+        const groupedNoes = {
+          active: [],
+          upcoming: [],
+          overrunning: [],
+          finished: []
+        };
+
+        filteredNoes.forEach(noe => {
+          const { status } = getNoeStatus(noe.startDate, noe.endDate);
+          if (groupedNoes[status]) {
+            groupedNoes[status].push(noe);
+          } else {
+            groupedNoes.finished.push(noe);
+          }
+        });
+
+        // Sort each group
+        Object.keys(groupedNoes).forEach(status => {
+          groupedNoes[status].sort((a, b) => {
+            if (status === 'upcoming') {
+              return new Date(a.startDate) - new Date(b.startDate);
+            } else if (status === 'finished' || status === 'overrunning') {
+              return new Date(b.endDate) - new Date(a.endDate);
+            } else {
+              return new Date(a.endDate) - new Date(b.endDate);
+            }
+          });
+        });
+
+        // Display NOEs
+        const statusOrder = ['active', 'upcoming', 'overrunning', 'finished'];
+        const statusLabels = {
+          active: 'Active',
+          upcoming: 'Upcoming',
+          overrunning: 'Overrunning',
+          finished: 'Finished'
+        };
+
+        let hasNoes = false;
+
+        statusOrder.forEach(status => {
+          const noesInStatus = groupedNoes[status];
+          if (noesInStatus.length > 0) {
+            hasNoes = true;
+            
+            // Add status header
+            const statusHeader = document.createElement('div');
+            statusHeader.className = `noe-status-header noe-status-${status}`;
+            statusHeader.style.fontSize = '0.9rem';
+            statusHeader.style.padding = '6px 10px';
+            statusHeader.textContent = statusLabels[status];
+            routeNoesList.appendChild(statusHeader);
+
+            // Add NOEs
+            noesInStatus.forEach(noe => {
+              const noeDiv = document.createElement('div');
+              noeDiv.className = 'route-note';
+              
+              // Format dates
+              const startDateText = noe.startDate ? new Date(noe.startDate).toLocaleDateString() : 'Not specified';
+              const endDateText = noe.endDate ? new Date(noe.endDate).toLocaleDateString() : 'Not specified';
+              
+              noeDiv.innerHTML = `
+                <p><a href="${noe.downloadURL}" target="_blank">${noe.fileName}</a></p>
+                <p><small>Valid: ${startDateText} to ${endDateText}</small></p>
+              `;
+              routeNoesList.appendChild(noeDiv);
+            });
+          }
+        });
+
+        routeNoesDisplay.style.display = hasNoes ? 'block' : 'none';
+      });
+    }
+
+    // --------- Toilet Codes Logic -----------
+    const toiletCodesData = [
+      { location: "Acton Green", mainDoor: "7469", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Atkins Road", mainDoor: "5+4 2 1", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Belmont", mainDoor: "5603", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Bessborough Rd./Alton Rd.", mainDoor: "C8046X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Brentford County Court", mainDoor: "235", gents: "", ladies: "C1953X", keyLockBox: "" },
+      { location: "Brook Street", mainDoor: "5617", gents: "", ladies: "", keyLockBox: "Temporary toilet code: C1234Z" },
+      { location: "Cane Hill", mainDoor: "C4590X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Camberwell", mainDoor: "1403", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Chessington WOA", mainDoor: "", gents: "C1652Z", ladies: "C8925X", keyLockBox: "" },
+      { location: "Chiswick Business Park", mainDoor: "1+5 4", gents: "", ladies: "2314", keyLockBox: "" },
+      { location: "Clapham Junction", mainDoor: "2+4 1+5 3", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Cromwell Road", mainDoor: "B83790", gents: "4+2, 5, 3", ladies: "2+3, 4, 1", keyLockBox: "" },
+      { location: "East Acton, Telford Way", mainDoor: "", gents: "2471", ladies: "2947", keyLockBox: "" },
+      { location: "Ealing Taxi/Bus Stand", mainDoor: "5116", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Fairfield Bus Station", mainDoor: "5+3, 2, 1", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Fulwell Stanley Road", mainDoor: "1702", gents: "1702", ladies: "C6740Z", keyLockBox: "" },
+      { location: "Great West Quarter", mainDoor: "1+5, 1", gents: "", ladies: "1+2, 4, 3", keyLockBox: "" },
+      { location: "Ham", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Hammersmith Lower", mainDoor: "2+3, 5, 4, 1", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Harrow Bus Station", mainDoor: "C1209X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Kingston - Millennium House", mainDoor: "C1987", gents: "", ladies: "1987", keyLockBox: "" },
+      { location: "Lonsdale Road", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Manor Road", mainDoor: "1468Y", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Mitcham Fair Green", mainDoor: "", gents: "5+2 1 4", ladies: "", keyLockBox: "" },
+      { location: "Morden", mainDoor: "C3490X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Park Royal ASDA", mainDoor: "1048 / 1987", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Pollards Hill", mainDoor: "1203", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Putney Bridge", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Richmond Bus Station", mainDoor: "1+2, 3+5, 4", gents: "2512", ladies: "6113", keyLockBox: "Temp Toilet C3470" },
+      { location: "Roehampton Bus Station", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Southgate Toilet", mainDoor: "", gents: "", ladies: "C2581Y", keyLockBox: "" },
+      { location: "Staines Elmsleigh Centre", mainDoor: "7532", gents: "1473", ladies: "1473", keyLockBox: "Back door code 2704 driver give code on 25/03/2024" },
+      { location: "Sutton Hospital", mainDoor: "2+5 1", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Tolworth (Toby Way)", mainDoor: "C3460X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Tolworth Travel Lodge", mainDoor: "C3470X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Tottenham Hale Bus Station Cabin", mainDoor: "3470X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Turnpike Lane", mainDoor: "2351X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Twickenham Albany", mainDoor: "", gents: "6912", ladies: "5831", keyLockBox: "" },
+      { location: "Wakefield Road", mainDoor: "", gents: "", ladies: "8205", keyLockBox: "" },
+      { location: "Waitrose Twickenham", mainDoor: "60369X", gents: "", ladies: "", keyLockBox: "" },
+      { location: "Wallington", mainDoor: "2 5+3", gents: "", ladies: "2703", keyLockBox: "" }
+    ];
+
+    const toiletLocationDd = document.getElementById('toiletLocationDropdown');
+    const showToiletCodesBtn = document.getElementById('showToiletCodes');
+    const toiletCodesDisplay = document.getElementById('toiletCodesDisplay');
+
+    toiletLocationDd.addEventListener('change', () => {
+      showToiletCodesBtn.disabled = !toiletLocationDd.value;
+      toiletCodesDisplay.style.display = 'none';
+    });
+
+    showToiletCodesBtn.addEventListener('click', () => {
+      const selectedLocation = toiletLocationDd.value;
+      if (!selectedLocation) return;
+
+      const locationData = toiletCodesData.find(item => item.location === selectedLocation);
+      if (!locationData) {
+        toiletCodesDisplay.innerHTML = '<p>No codes available for this location.</p>';
+        toiletCodesDisplay.style.display = 'block';
+        return;
+      }
+
+      let html = '';
+      if (locationData.mainDoor) html += `<p><strong>Main Door:</strong> ${locationData.mainDoor}</p>`;
+      if (locationData.gents) html += `<p><strong>Gents:</strong> ${locationData.gents}</p>`;
+      if (locationData.ladies) html += `<p><strong>Ladies:</strong> ${locationData.ladies}</p>`;
+      if (locationData.keyLockBox) html += `<p><strong>Key Lock Box:</strong> ${locationData.keyLockBox}</p>`;
+
+      toiletCodesDisplay.innerHTML = html || '<p>No codes available for this location.</p>';
+      toiletCodesDisplay.style.display = 'block';
+    });
+
+    // --------- Midnight Handover Logic -----------
+    const copyHandoverBtn = document.getElementById('copyHandoverText');
+    const handoverTextArea = document.getElementById('handoverText');
+
+    copyHandoverBtn.addEventListener('click', () => {
+      handoverTextArea.select();
+      try {
+        document.execCommand('copy');
+        copyHandoverBtn.textContent = 'Copied!';
+        copyHandoverBtn.style.background = '#44b261';
+        setTimeout(() => {
+          copyHandoverBtn.textContent = 'Copy to Clipboard';
+          copyHandoverBtn.style.background = '#ff44d0';
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy text: ', err);
+        copyHandoverBtn.textContent = 'Copy Failed';
+        copyHandoverBtn.style.background = '#d70a33';
+      }
+    });
+
+    // --------- Route Info Logic -----------
+    const routeDd = document.getElementById('routeDropdown');
+    const routeInfoText = document.getElementById('routeInfo');
+    const saveRouteNoteBtn = document.getElementById('saveRouteNote');
+    const routeNotesList = document.getElementById('routeNotesList');
+    let editingNoteId = null;
+
+    function updateSaveButtonState() {
+      saveRouteNoteBtn.disabled = !(routeDd.value && routeInfoText.value.trim());
+    }
+    routeDd.addEventListener('change', updateSaveButtonState);
+    routeInfoText.addEventListener('input', updateSaveButtonState);
+
+    saveRouteNoteBtn.addEventListener('click', () => {
+      const route = routeDd.value;
+      const info = routeInfoText.value.trim();
+      if (!route || !info) return;
+
+      const note = {
+        route: route,
+        info: info,
+        timestamp: Date.now()
+      };
+
+      if (editingNoteId) {
+        database.ref('route-info/' + editingNoteId).update(note)
+          .then(() => {
+            resetForm();
+          })
+          .catch(error => {
+            console.error('Error updating note:', error);
+            alert('Failed to update note.');
+          });
+      } else {
+        database.ref('route-info').push(note)
+          .then(() => {
+            resetForm();
+          })
+          .catch(error => {
+            console.error('Error saving note:', error);
+            alert('Failed to save note.');
+          });
+      }
+    });
+
+    function resetForm() {
+      routeInfoText.value = '';
+      editingNoteId = null;
+      saveRouteNoteBtn.textContent = 'Save Note';
+      saveRouteNoteBtn.disabled = true;
+      renderNotes();
+    }
+
+    function renderNotes() {
+      const selectedRoute = routeDd.value;
+      if (!selectedRoute) {
+        routeNotesList.innerHTML = '<div>Select a route to view notes.</div>';
+        return;
+      }
+
+      database.ref('route-info').orderByChild('route').equalTo(selectedRoute).once('value', snapshot => {
+        routeNotesList.innerHTML = '';
+        const notes = snapshot.val();
+        if (!notes) {
+          routeNotesList.innerHTML = '<div>No notes found for this route.</div>';
+          return;
+        }
+
+        const notesArray = Object.entries(notes).map(([id, note]) => ({ id, ...note }));
+        notesArray.sort((a, b) => b.timestamp - a.timestamp);
+
+        notesArray.forEach(note => {
+          const noteDiv = document.createElement('div');
+          noteDiv.className = 'route-note';
+          const date = new Date(note.timestamp).toLocaleString();
+          noteDiv.innerHTML = `
+            <p>${note.info}</p>
+            <p><small>Added: ${date}</small></p>
+            <button class="edit-btn" data-id="${note.id}">Edit</button>
+            <button class="delete-btn" data-id="${note.id}">Delete</button>
+            <button class="copy-btn" data-id="${note.id}">Copy</button>
+            <button class="push-btn" data-id="${note.id}">Push to Routes</button>
+            <div class="push-options" id="push-options-${note.id}">
+              <div class="routes-checkbox-container">
+                <label><input type="checkbox" value="33"> 33</label>
+                <label><input type="checkbox" value="65"> 65</label>
+                <label><input type="checkbox" value="71"> 71</label>
+                <label><input type="checkbox" value="85"> 85</label>
+                <label><input type="checkbox" value="105"> 105</label>
+                <label><input type="checkbox" value="110"> 110</label>
+                <label><input type="checkbox" value="116"> 116</label>
+                <label><input type="checkbox" value="117"> 117</label>
+                <label><input type="checkbox" value="203"> 203</label>
+                <label><input type="checkbox" value="216"> 216</label>
+                <label><input type="checkbox" value="235"> 235</label>
+                <label><input type="checkbox" value="281"> 281</label>
+                <label><input type="checkbox" value="290"> 290</label>
+                <label><input type="checkbox" value="293"> 293</label>
+                <label><input type="checkbox" value="371"> 371</label>
+                <label><input type="checkbox" value="406"> 406</label>
+                <label><input type="checkbox" value="411"> 411</label>
+                <label><input type="checkbox" value="418"> 418</label>
+                <label><input type="checkbox" value="419"> 419</label>
+                <label><input type="checkbox" value="423"> 423</label>
+                <label><input type="checkbox" value="467"> 467</label>
+                <label><input type="checkbox" value="613"> 613</label>
+                <label><input type="checkbox" value="662"> 662</label>
+                <label><input type="checkbox" value="665"> 665</label>
+                <label><input type="checkbox" value="681"> 681</label>
+                <label><input type="checkbox" value="696"> 696</label>
+                <label><input type="checkbox" value="698"> 698</label>
+                <label><input type="checkbox" value="H22"> H22</label>
+                <label><input type="checkbox" value="H37"> H37</label>
+                <label><input type="checkbox" value="H98"> H98</label>
+                <label><input type="checkbox" value="K1"> K1</label>
+                <label><input type="checkbox" value="K2"> K2</label>
+                <label><input type="checkbox" value="K3"> K3</label>
+                <label><input type="checkbox" value="K4"> K4</label>
+                <label><input type="checkbox" value="K5"> K5</label>
+              </div>
+              <button class="confirm-push" data-id="${note.id}">Confirm Push</button>
+            </div>
+          `;
+          routeNotesList.appendChild(noteDiv);
+
+          noteDiv.querySelector('.edit-btn').addEventListener('click', () => {
+            editingNoteId = note.id;
+            routeInfoText.value = note.info;
+            saveRouteNoteBtn.textContent = 'Update Note';
+            saveRouteNoteBtn.disabled = false;
+          });
+
+          noteDiv.querySelector('.delete-btn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete this note?')) {
+              database.ref('route-info/' + note.id).remove()
+                .then(() => {
+                  renderNotes();
+                })
+                .catch(error => {
+                  console.error('Error deleting note:', error);
+                  alert('Failed to delete note.');
+                });
+            }
+          });
+
+          noteDiv.querySelector('.copy-btn').addEventListener('click', () => {
+            const textarea = document.createElement('textarea');
+            textarea.value = note.info;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('Note copied to clipboard!');
+          });
+
+          noteDiv.querySelector('.push-btn').addEventListener('click', () => {
+            const pushOptions = noteDiv.querySelector('.push-options');
+            pushOptions.classList.toggle('active');
+          });
+
+          noteDiv.querySelector('.confirm-push').addEventListener('click', () => {
+            const checkboxes = noteDiv.querySelectorAll('.routes-checkbox-container input[type="checkbox"]:checked');
+            const selectedRoutes = Array.from(checkboxes).map(checkbox => checkbox.value);
+            
+            if (selectedRoutes.length === 0) {
+              alert('Please select at least one route to push to.');
+              return;
+            }
+
+            const noteData = {
+              route: note.route,
+              info: note.info,
+              timestamp: Date.now()
+            };
+
+            const updates = {};
+            selectedRoutes.forEach(route => {
+              const newNoteRef = database.ref('route-info').push();
+              updates[newNoteRef.key] = { ...noteData, route: route };
+            });
+
+            database.ref().update(updates)
+              .then(() => {
+                const pushOptions = noteDiv.querySelector('.push-options');
+                pushOptions.classList.remove('active');
+                alert(`Note pushed to ${selectedRoutes.length} route(s) successfully.`);
+              })
+              .catch(error => {
+                console.error('Error pushing note:', error);
+                alert('Failed to push note.');
+              });
+          });
+        });
+      });
+    }
+
+    function loadRouteNotes() {
+      routeDd.addEventListener('change', () => {
+        if (!editingNoteId) {
+          routeInfoText.value = '';
+          updateSaveButtonState();
+        }
+        renderNotes();
+        loadRouteNoes();
+      });
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          if (tab.dataset.tab === 'route-info') {
+            resetForm();
+            renderNotes();
+            loadRouteNoes();
+          }
+        });
+      });
+    }
+    loadRouteNotes();
+
+    // --------- Driving Hours Calculator Logic -----------
+    const currentInputDiv = document.getElementById('current-input');
+    const breakSpellBtn = document.getElementById('break-spell');
+    const calculateBtn = document.getElementById('calculate-driving-time');
+    const resultDiv = document.getElementById('driving-time-result');
+    const currentSpellHeader = document.getElementById('current-spell');
+
+    let currentSpell = 'first';
+    let currentTrip = 1;
+    let currentStage = 'start';
+    let tripData = {
+      first: Array(6).fill().map(() => ({ start: null, end: null })),
+      second: Array(6).fill().map(() => ({ start: null, end: null })),
+      break: { start: null, end: null }
+    };
+
+    function resetDrivingHoursCalculator() {
+      currentSpell = 'first';
+      currentTrip = 1;
+      currentStage = 'start';
+      tripData = {
+        first: Array(6).fill().map(() => ({ start: null, end: null })),
+        second: Array(6).fill().map(() => ({ start: null, end: null })),
+        break: { start: null, end: null }
+      };
+      currentSpellHeader.textContent = 'First Spell';
+      breakSpellBtn.style.display = 'none';
+      calculateBtn.style.display = 'none';
+      resultDiv.textContent = '';
+      renderCurrentInput();
+    }
+
+    function renderCurrentInput() {
+      currentInputDiv.innerHTML = '';
+
+      if (currentSpell === 'break') {
+        const labelText = currentStage === 'break-start' ? 'Break Start Time' : 'Break End Time';
+        currentInputDiv.innerHTML = `
+          <div class="trip-input">
+            <label>${labelText}</label>
+            <input type="text" id="current-time-input" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" placeholder="HH:MM" required>
+          </div>
+        `;
+      } else {
+        const spellText = currentSpell === 'first' ? 'First' : 'Second';
+        const labelText = currentStage === 'start' ? `Trip ${currentTrip} Start` : `Trip ${currentTrip} End`;
+        currentInputDiv.innerHTML = `
+          <div class="trip-input">
+            <label>${spellText} Spell - ${labelText}</label>
+            <input type="text" id="current-time-input" maxlength="5" pattern="[0-2][0-9]:[0-5][0-9]" placeholder="HH:MM" required>
+          </div>
+        `;
+        if (currentSpell === 'first' && (currentTrip > 1 || currentStage === 'end')) {
+          breakSpellBtn.style.display = 'inline-block';
+        }
+        if (currentSpell === 'second' && (currentTrip > 1 || currentStage !== 'start')) {
+          calculateBtn.style.display = 'inline-block';
+        }
+      }
+
+      const timeInput = document.getElementById('current-time-input');
+      timeInput.focus();
+
+      timeInput.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/[^0-9]/g, '');
+        if (value.length > 2) {
+          value = value.slice(0, 2) + ':' + value.slice(2);
+        }
+        e.target.value = value.slice(0, 5);
+      });
+
+      timeInput.addEventListener('change', handleTimeInput);
+    }
+
+    function handleTimeInput() {
+      const timeInput = document.getElementById('current-time-input');
+      let timeValue = timeInput.value;
+
+      if (!timeValue || !/^[0-2][0-9]:[0-5][0-9]$/.test(timeValue)) {
+        alert('Please enter a valid time in HH:MM format.');
+        timeInput.value = '';
+        timeInput.focus();
+        return;
+      }
+
+      if (currentSpell === 'break') {
+        tripData.break[currentStage === 'break-start' ? 'start' : 'end'] = timeValue;
+        if (currentStage === 'break-start') {
+          currentStage = 'break-end';
+          renderCurrentInput();
+        } else {
+          currentSpell = 'second';
+          currentTrip = 1;
+          currentStage = 'start';
+          currentSpellHeader.textContent = 'Second Spell';
+          breakSpellBtn.style.display = 'none';
+          renderCurrentInput();
+        }
+      } else {
+        const spellData = tripData[currentSpell];
+        if (currentStage === 'start') {
+          spellData[currentTrip - 1].start = timeValue;
+          currentStage = 'end';
+        } else if (currentStage === 'end') {
+          spellData[currentTrip - 1].end = timeValue;
+          if (currentTrip < 6) {
+            currentTrip++;
+            currentStage = 'start';
+          } else if (currentSpell === 'second') {
+            calculateDrivingTime();
+            return;
+          }
+        }
+        renderCurrentInput();
+      }
+    }
+
+    breakSpellBtn.addEventListener('click', () => {
+      if (currentSpell === 'first') {
+        currentSpell = 'break';
+        currentStage = 'break-start';
+        currentSpellHeader.textContent = 'Break';
+        breakSpellBtn.style.display = 'none';
+        renderCurrentInput();
+      }
+    });
+
+    function calculateDrivingTime() {
+      const breakStart = tripData.break.start;
+      const breakEnd = tripData.break.end;
+
+      if (!breakStart || !breakEnd) {
+        resultDiv.textContent = 'Please fill in the break times.';
+        return;
+      }
+
+      function timeToMinutes(time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+      }
+
+      let breakTime = timeToMinutes(breakEnd) - timeToMinutes(breakStart);
+      if (breakTime < 0) breakTime += 1440;
+
+      let totalDrivingTime = 0;
+      let totalStandTime = 0;
+
+      ['first', 'second'].forEach(half => {
+        const trips = tripData[half];
+        trips.forEach((trip, index) => {
+          if (trip.start && trip.end) {
+            let startMin = timeToMinutes(trip.start);
+            let endMin = timeToMinutes(trip.end);
+
+            let tripDuration = endMin - startMin;
+            if (tripDuration < 0) tripDuration += 1440;
+
+            totalDrivingTime += tripDuration;
+
+            if (index < trips.length - 1 && trips[index + 1].start) {
+              let nextStartMin = timeToMinutes(trips[index + 1].start);
+              let standDuration = nextStartMin - endMin;
+              if (standDuration < 0) standDuration += 1440;
+              totalStandTime += standDuration;
+            }
+          }
+        });
+      });
+
+      totalDrivingTime -= breakTime;
+      if (totalDrivingTime < 0) totalDrivingTime = 0;
+
+      const drivingHours = Math.floor(totalDrivingTime / 60);
+      const drivingMinutes = totalDrivingTime % 60;
+      const standHours = Math.floor(totalStandTime / 60);
+      const standMinutes = totalStandTime % 60;
+      const breakHours = Math.floor(breakTime / 60);
+      const breakMinutes = breakTime % 60;
+
+      resultDiv.textContent = `Total Driving Time: ${drivingHours}h ${drivingMinutes}m (Excludes ${standHours}h ${standMinutes}m of stand time and ${breakHours}h ${breakMinutes}m of break time)`;
+    }
+
+    calculateBtn.addEventListener('click', calculateDrivingTime);
+
+    renderCurrentInput();
+
+    // --------- Hidden Alarm Feature: Trigger at 18:30 Daily -----------
+    let lastAlarmDate = null;
+
+    function checkAlarm() {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const currentDate = getDateYYYYMMDD(now);
+
+      if (hours === 18 && minutes === 30 && lastAlarmDate !== currentDate) {
+        alert("MOVE YOUR CAR");
+        lastAlarmDate = currentDate;
+      }
+    }
+
+    function getDateYYYYMMDD(date) {
+      return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+    }
+
+    function pad(n) { return n < 10 ? '0' + n : n; }
+
+    setInterval(checkAlarm, 60000);
+    checkAlarm();
   </script>
   
   <!-- Overtime Form JavaScript -->
   <script src="overtime.js"></script>
-
-  <!-- Overtime Form Button Logic (added by AI) -->
-  <script>
-    // Overtime Form PDF and Email logic
-    document.addEventListener('DOMContentLoaded', function() {
-      const form = document.getElementById('overtime-form');
-      if (!form) return;
-
-      const pdfBtn = document.getElementById('generate-pdf');
-      const emailBtn = document.getElementById('send-email');
-
-      // Helper to get form data as object
-      function getFormData() {
-        return {
-          'Duty Number': form.dutyNumber.value,
-          'Employee Number': form.employeeNumber.value,
-          'Total Time Driven (before OT)': form.totalTimeDriven.value,
-          'OG Route / OT Route': form.routes.value,
-          'OT Start Time': form.otStartTime.value,
-          'OT End Time': form.otEndTime.value,
-          'Approved By': form.approvedBy.value,
-          'Date': form.overtimeDate.value,
-          'Additional Notes': form.additionalNotes.value
-        };
-      }
-
-      // PDF Generation
-      pdfBtn.addEventListener('click', async function() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-
-        // Try to load the local logo, fallback to online SVG
-        let logoDataUrl = null;
-        try {
-          const response = await fetch('firstbuslogo.png');
-          if (response.ok) {
-            const blob = await response.blob();
-            logoDataUrl = await new Promise(resolve => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result);
-              reader.readAsDataURL(blob);
-            });
-          }
-        } catch (e) {}
-
-        if (!logoDataUrl) {
-          // fallback to SVG online
-          logoDataUrl = 'https://www.firstbus.co.uk/themes/custom/first_bus/logo.svg';
-        }
-
-        // Add logo
-        if (logoDataUrl.endsWith('.svg')) {
-          // SVG can't be embedded directly, so just add text fallback
-          doc.setFontSize(18);
-          doc.text('First Bus', 105, 20, { align: 'center' });
-        } else {
-          doc.addImage(logoDataUrl, 'PNG', 60, 10, 90, 25);
-        }
-
-        doc.setFontSize(16);
-        doc.text('Overtime Form', 105, 45, { align: 'center' });
-
-        doc.setFontSize(12);
-        const data = getFormData();
-        let y = 60;
-        for (const [label, value] of Object.entries(data)) {
-          doc.text(`${label}: ${value || ''}`, 20, y);
-          y += 10;
-        }
-
-        doc.save('Overtime_Form.pdf');
-      });
-
-      // Email logic
-      emailBtn.addEventListener('click', function() {
-        const data = getFormData();
-        let body = '';
-        for (const [label, value] of Object.entries(data)) {
-          body += `${label}: ${value || ''}\n`;
-        }
-        const subject = encodeURIComponent('Overtime Form Submission');
-        const bodyEncoded = encodeURIComponent(body);
-
-        // Open Outlook web client
-        window.open(`https://outlook.office.com/mail/deeplink/compose?subject=${subject}&body=${bodyEncoded}`, '_blank');
-      });
-    });
-  </script>
-
+  
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93e7ac559e8ded7c',t:'MTc0NzAyOTM4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
-''')
-print('index.html created')
+
