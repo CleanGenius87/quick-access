@@ -9,6 +9,13 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  
+  <!-- PDF Generation for Overtime Form -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <!-- Overtime Form Styles -->
+  <link rel="stylesheet" href="overtime.css">
   <style>
     body {
       background: #2c0078;
@@ -220,7 +227,10 @@
       <div class="tab" data-tab="handover">Midnight Handover</div>
       <div class="tab" data-tab="route-info">Route Info</div>
       <div class="tab" data-tab="driving-hours">Driving Hours</div>
+    <div class="tab" data-tab="overtime">Overtime Form</div>
     </div>
+
+
     <!-- Tab 1: Quick Access -->
     <div class="tab-content active" id="tab-access">
       <div class="dropdown-section">
@@ -673,6 +683,64 @@ Events taking place/due to take place: </textarea>
       </div>
     </div>
 
+    <!-- Tab 7: Overtime Form -->
+    <div class="tab-content" id="tab-overtime">
+      <form id="overtime-form">
+        <div class="dropdown-section">
+          <label for="dutyNumber">Duty Number</label>
+          <input type="text" id="dutyNumber" name="dutyNumber" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="employeeNumber">Employee Number</label>
+          <input type="text" id="employeeNumber" name="employeeNumber" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="totalTimeDriven">Total Time Driven (before OT)</label>
+          <input type="text" id="totalTimeDriven" name="totalTimeDriven" placeholder="e.g., 8h 30m" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="routes">OG Route / OT Route</label>
+          <input type="text" id="routes" name="routes" placeholder="e.g., 71 / 110" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="otStartTime">OT Start Time</label>
+          <input type="time" id="otStartTime" name="otStartTime" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="otEndTime">OT End Time</label>
+          <input type="time" id="otEndTime" name="otEndTime" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="approvedBy">Approved By</label>
+          <input type="text" id="approvedBy" name="approvedBy" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="overtimeDate">Date</label>
+          <input type="date" id="overtimeDate" name="overtimeDate" required>
+        </div>
+        
+        <div class="dropdown-section">
+          <label for="additionalNotes">Additional Notes</label>
+          <textarea id="additionalNotes" name="additionalNotes" placeholder="Any additional information..."></textarea>
+        </div>
+        
+        <div class="actions">
+          <button type="button" id="clear-form">Clear Form</button>
+          <button type="button" id="generate-pdf">Generate PDF</button>
+          <button type="button" id="send-email">Send by Email</button>
+          <button type="button" id="reset-form">Reset</button>
+          <button type="button" id="generate-pdf-email">Generate PDF & Email</button>
+        </div>
+      </form>
+    </div>
+
     <div class="footer">
       © First Bus – Quick Access Portal
     </div>
@@ -739,10 +807,21 @@ Events taking place/due to take place: </textarea>
     });
     openFileBtn.addEventListener('click', () => {
       if (fileDd.value) {
+        // Extract filename from the URL for download attribute
+        const url = fileDd.value;
+        const filename = url.split('/').pop().replace(/%20/g, ' ');
+        
+        // Create a temporary link element for download
         const link = document.createElement('a');
-        link.href = fileDd.value;
-        link.download = '';
+        link.href = url;
+        link.download = filename;
+        link.target = '_blank';
+        link.style.display = 'none';
+        
+        // Add to DOM, click, and remove
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
       }
     });
 
@@ -1670,6 +1749,10 @@ Events taking place/due to take place: </textarea>
     setInterval(checkAlarm, 60000);
     checkAlarm();
   </script>
+  
+  <!-- Overtime Form JavaScript -->
+  <script src="overtime.js"></script>
+  
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93e7ac559e8ded7c',t:'MTc0NzAyOTM4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 
